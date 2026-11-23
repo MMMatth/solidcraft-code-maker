@@ -21,7 +21,7 @@ editable geometry, ready for 3D printing.
 | Move away from the face | 0 mm | Positive lifts the code off the face, negative sinks it into the model (needs a face) |
 
 Everything else is chosen for you: a plate 2 mm thick with a small blank border, a level of error
-correction that survives small print flaws, and a single body for the whole result.
+correction that survives small print flaws, and a single body for the whole result, and the code kept as a sketch plus an extrusion so you can still edit it.
 
 With a face picked, the code is centred on the face's centre, upright toward world Z (toward world Y on a
 horizontal face), and it joins the picked body (Raised) or is cut into it (Engraved). A code larger than the
@@ -35,9 +35,11 @@ From a script or an MCP client, the entry is `qr-code.qr`, with the parameters `
 ## How it works
 
 The QR matrix comes from the [`qrcodegen`](https://crates.io/crates/qrcodegen) crate. Neighbouring dark
-modules are merged into as few rectangles as a greedy sweep finds, each rectangle becomes a box, and one
-`solid.combine` joins them to the plate (or cuts them out of it). A single combine keeps the run fast:
-joining or cutting each box separately gets slower with every box already in the plate.
+modules are merged into as few rectangles as a greedy sweep finds, and the plugin draws them in one sketch
+named "QR code", then extrudes it with one feature, also named "QR code". The result is two ordinary entries
+in the timeline, so you can edit the sketch, change the extrusion's height or move the sketch afterwards.
+On a face the sketch lies on a plane centred on the face (shifted by the offset along its normal); without a
+face it lies on top of a new plate.
 
 ## Build
 
