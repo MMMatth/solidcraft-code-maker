@@ -8,11 +8,13 @@ editable geometry, ready for 3D printing.
 
 1. Download `qr-code-<version>.zip` from the [Releases](../../releases) page.
 2. In SolidCraft, open **Preferences > Plugins > Install plugin…**, pick the zip and review the
-   permissions. The plugin only asks to run `solid.box` and `solid.combine`; it needs no files and no network.
+   permissions. The plugin only asks to run `solid.box`, `solid.combine`, `solid.move` and `model.faces`; it needs no files and no network.
 3. Run **QR Code** from the **Plugins** group on the Model tab and fill in the form.
 
 | Field | Default | Meaning |
 |---|---|---|
+| Face (optional) | none | A flat face to put the code on; without one, the code gets a new plate |
+| Offset from the face | 0 mm | Along the face's normal: `+` moves the code away from the face, `-` into the body |
 | Text or URL | `https://example.com` | What the code encodes (at most 500 bytes) |
 | Error correction | `M` | `L`, `M`, `Q` or `H` |
 | Mode | `relief` | `relief` raises the modules; `engrave` cuts them into the plate |
@@ -20,6 +22,12 @@ editable geometry, ready for 3D printing.
 | Relief height / engraving depth | 0.6 mm | Must be below the plate thickness when engraving |
 | Plate thickness | 2 mm | |
 | Margin (modules) | 2 | Blank border around the code |
+
+With a face picked, the code is centred on the face's centre, upright toward world Z (toward world Y on a
+horizontal face), and it joins the picked body (`relief`) or is cut into it (`engrave`). The plate thickness
+and margin are not used then. An offset above zero lifts the code off the face, so its modules become
+separate bodies; a negative one sinks them into the body. A code larger than the face overhangs it, so pick a
+face that is big enough or reduce the module size.
 
 One run is one undo step, and an invalid input changes nothing.
 
