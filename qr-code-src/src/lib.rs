@@ -8,6 +8,11 @@ use serde_json::{Value, json};
 
 /// Longest text accepted, in bytes. A version-40 code holds more, but the model would be huge.
 const MAX_TEXT: usize = 500;
+/// Plate thickness and quiet-zone width (in modules) of a code on a new plate.
+const PLATE: f64 = 2.0;
+const MARGIN: f64 = 2.0;
+/// Smallest module that prints legibly with a common 0.4 mm nozzle.
+const MIN_MODULE: f64 = 0.4;
 
 struct Plugin;
 
@@ -29,35 +34,35 @@ fn qr(params: &Value) -> Result<String, PluginError> {
     if text.len() > MAX_TEXT {
         return Err(invalid("text", format!("at most {MAX_TEXT} bytes")));
     }
-    let ecc = match params.get("correction").and_then(Value::as_str).unwrap_or("M") {
-        "L" => QrCodeEcc::Low,
-        "M" => QrCodeEcc::Medium,
-        "Q" => QrCodeEcc::Quartile,
-        "H" => QrCodeEcc::High,
-        other => return Err(invalid("correction", format!("`{other}` is not L, M, Q or H"))),
-    };
-    let module = number(params, "module_size", 1.0, 0.2, 20.0)?;
+    // Plain settings only: the error correction, the margin and the plate are fixed choices.
+    let size = number(params, "size", 30.0, 5.0, 500.0)?;
     let height = number(params, "height", 0.6, 0.1, 20.0)?;
-    let plate = number(params, "plate_thickness", 2.0, 0.2, 50.0)?;
-    let margin = number(params, "margin", 2.0, 0.0, 10.0)?.round();
-    let engrave = match params.get("mode").and_then(Value::as_str).unwrap_or("relief") {
-        "relief" => false,
-        "engrave" => true,
-        other => return Err(invalid("mode", format!("`{other}` is not relief or engrave"))),
-    };
-    if engrave && height >= plate {
-        return Err(invalid("height", "an engraving must be shallower than the plate"));
-    }
-
-    let one_body = params.get("one_body").and_then(Value::as_bool).unwrap_or(true);
     let offset = number(params, "offset", 0.0, -1000.0, 1000.0)?;
+    let engrave = match params.get("style").and_then(Value::as_str).unwrap_or("raised") {
+        "raised" => false,
+        "engraved" => true,
+        other => return Err(invalid("style", format!("`{other}` is not raised or engraved"))),
+    };
     let face = match params.get("face").and_then(Value::as_array).and_then(|a| a.first()) {
         Some(pick) => Some(face_frame(pick)?),
         None => None,
     };
+    if engrave && face.is_none() && height >= PLATE {
+        return Err(invalid("height", format!("an engraving on a new plate must be under {PLATE} mm deep")));
+    }
 
-    let code = QrCode::encode_text(text, ecc).map_err(|_| invalid("text", "too long for a QR code"))?;
+    let code = QrCode::encode_text(text, QrCodeEcc::Medium).map_err(|_| invalid("text", "too long for a QR code"))?;
     let n = usize::try_from(code.size()).map_err(|_| invalid("text", "empty code"))?;
+    // `size` is the code's width; the plate adds a margin of MARGIN modules around it.
+    let module = size / n as f64;
+    if module < MIN_MODULE {
+        return Err(invalid(
+            "size",
+            format!("too small for this text to print well: use at least {:.0} mm or a shorter text", (MIN_MODULE * n as f64).ceil()),
+        ));
+    }
+    let margin = MARGIN;
+    let plate = PLATE;
     let side = (n as f64 + 2.0 * margin) * module;
 
     // On a face the code has no plate of its own: it joins the picked body or is cut into it.
@@ -106,8 +111,8 @@ fn qr(params: &Value) -> Result<String, PluginError> {
     if let Some(f) = &face {
         place(f, &tools, offset)?;
     }
-    // Modules lifted off the face touch nothing: without `one_body` each becomes a body of its own.
-    let touching = if one_body { "one_body" } else { "separate" };
+    // Modules lifted off the face touch nothing, so they are kept in one body explicitly.
+    let touching = "one_body";
     commands::run(
         "solid.combine",
         &json!({"target": target, "tools": tools, "operation": op, "touching": touching}).to_string(),

@@ -1,30 +1,98 @@
 {
   "id": "qr-code",
   "name": "QR Code",
-  "version": "0.2.0",
-  "description": "Adds a plate with a QR code, raised or engraved.",
-  "capabilities": ["commands@0.2"],
+  "version": "0.3.0",
+  "description": "Puts a QR code on a plate or on a face of your model.",
+  "capabilities": [
+    "commands@0.2"
+  ],
   "runtime": {
     "module": "qr-code.wasm",
-    "commands": ["solid.box", "solid.combine", "solid.move", "model.faces"],
-    "entries": [{
-      "name": "qr",
-      "effect": "edit",
-      "input_schema": {"type": "object", "properties": {
-        "face": {"type": "array", "title": "Face (optional)", "description": "A flat face to put the code on. Without one, the code is on a new plate.", "maxItems": 1,
-                 "x-solidcraft-selection": {"version": 1, "accept": ["face"]}},
-        "offset": {"type": "number", "title": "Offset from the face", "description": "Along the face's normal: + moves the code away from the face, - into the body. Needs a face.", "default": 0, "minimum": -1000, "maximum": 1000, "unit": "mm"},
-        "one_body": {"type": "boolean", "title": "Keep everything in one body", "description": "Also when the code is lifted off the face and touches nothing. Off: each loose module becomes a body of its own.", "default": true},
-        "text": {"type": "string", "title": "Text or URL", "default": "https://example.com", "maxLength": 500},
-        "correction": {"type": "string", "title": "Error correction", "default": "M", "enum": ["L", "M", "Q", "H"]},
-        "mode": {"type": "string", "title": "Mode", "default": "relief", "enum": ["relief", "engrave"]},
-        "module_size": {"type": "number", "title": "Module size", "default": 1, "minimum": 0.2, "maximum": 20, "unit": "mm"},
-        "height": {"type": "number", "title": "Relief height / engraving depth", "default": 0.6, "minimum": 0.1, "maximum": 20, "unit": "mm"},
-        "plate_thickness": {"type": "number", "title": "Plate thickness", "default": 2, "minimum": 0.2, "maximum": 50, "unit": "mm"},
-        "margin": {"type": "number", "title": "Margin (modules)", "default": 2, "minimum": 0, "maximum": 10}
-      }},
-      "slots": [{"kind": "ribbon", "name": "Model"}]
-    }],
-    "limits": {"fuel": 5000000000, "memory_mib": 32, "deadline_ms": 20000}
+    "commands": [
+      "solid.box",
+      "solid.combine",
+      "solid.move",
+      "model.faces"
+    ],
+    "entries": [
+      {
+        "name": "qr",
+        "effect": "edit",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "text": {
+              "type": "string",
+              "title": "Text or link",
+              "default": "https://example.com",
+              "maxLength": 500
+            },
+            "face": {
+              "type": "array",
+              "title": "Put it on a face (optional)",
+              "description": "Click a flat face of your model. Leave empty to get a new plate.",
+              "maxItems": 1,
+              "x-solidcraft-selection": {
+                "version": 1,
+                "accept": [
+                  "face"
+                ]
+              }
+            },
+            "style": {
+              "type": "string",
+              "title": "Style",
+              "default": "raised",
+              "oneOf": [
+                {
+                  "const": "raised",
+                  "title": "Raised"
+                },
+                {
+                  "const": "engraved",
+                  "title": "Engraved"
+                }
+              ]
+            },
+            "size": {
+              "type": "number",
+              "title": "Size",
+              "default": 30,
+              "minimum": 5,
+              "maximum": 500,
+              "unit": "mm"
+            },
+            "height": {
+              "type": "number",
+              "title": "Height or depth",
+              "default": 0.6,
+              "minimum": 0.1,
+              "maximum": 20,
+              "unit": "mm"
+            },
+            "offset": {
+              "type": "number",
+              "title": "Move away from the face",
+              "description": "Positive moves the code off the face, negative sinks it into the model. Only with a face.",
+              "default": 0,
+              "minimum": -1000,
+              "maximum": 1000,
+              "unit": "mm"
+            }
+          }
+        },
+        "slots": [
+          {
+            "kind": "ribbon",
+            "name": "Model"
+          }
+        ]
+      }
+    ],
+    "limits": {
+      "fuel": 5000000000,
+      "memory_mib": 32,
+      "deadline_ms": 20000
+    }
   }
 }
