@@ -49,6 +49,7 @@ fn qr(params: &Value) -> Result<String, PluginError> {
         return Err(invalid("height", "an engraving must be shallower than the plate"));
     }
 
+    let one_body = params.get("one_body").and_then(Value::as_bool).unwrap_or(true);
     let offset = number(params, "offset", 0.0, -1000.0, 1000.0)?;
     let face = match params.get("face").and_then(Value::as_array).and_then(|a| a.first()) {
         Some(pick) => Some(face_frame(pick)?),
@@ -105,9 +106,11 @@ fn qr(params: &Value) -> Result<String, PluginError> {
     if let Some(f) = &face {
         place(f, &tools, offset)?;
     }
+    // Modules lifted off the face touch nothing: without `one_body` each becomes a body of its own.
+    let touching = if one_body { "one_body" } else { "separate" };
     commands::run(
         "solid.combine",
-        &json!({"target": target, "tools": tools, "operation": op}).to_string(),
+        &json!({"target": target, "tools": tools, "operation": op, "touching": touching}).to_string(),
     )?;
     Ok(json!({"modules": n, "side_mm": side, "boxes": rects.len(), "mode": if engrave { "engrave" } else { "relief" }})
         .to_string())
