@@ -1,0 +1,1 @@
+{"entry":"qr","params":{"text":"https://example.com","size":30},"expect":{"model":{"body_count":1}}}
