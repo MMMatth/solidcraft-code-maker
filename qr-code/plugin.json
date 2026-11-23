@@ -1,16 +1,19 @@
 {
   "id": "qr-code",
   "name": "QR Code",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Adds a plate with a QR code, raised or engraved.",
   "capabilities": ["commands@0.2"],
   "runtime": {
     "module": "qr-code.wasm",
-    "commands": ["solid.box", "solid.combine"],
+    "commands": ["solid.box", "solid.combine", "solid.move", "model.faces"],
     "entries": [{
       "name": "qr",
       "effect": "edit",
       "input_schema": {"type": "object", "properties": {
+        "face": {"type": "array", "title": "Face (optional)", "description": "A flat face to put the code on. Without one, the code is on a new plate.", "maxItems": 1,
+                 "x-solidcraft-selection": {"version": 1, "accept": ["face"]}},
+        "offset": {"type": "number", "title": "Offset from the face", "description": "Along the face's normal: + moves the code away from the face, - into the body. Needs a face.", "default": 0, "minimum": -1000, "maximum": 1000, "unit": "mm"},
         "text": {"type": "string", "title": "Text or URL", "default": "https://example.com", "maxLength": 500},
         "correction": {"type": "string", "title": "Error correction", "default": "M", "enum": ["L", "M", "Q", "H"]},
         "mode": {"type": "string", "title": "Mode", "default": "relief", "enum": ["relief", "engrave"]},

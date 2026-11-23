@@ -49,30 +49,50 @@ fn qr(params: &Value) -> Result<String, PluginError> {
         return Err(invalid("height", "an engraving must be shallower than the plate"));
     }
 
+    let offset = number(params, "offset", 0.0, -1000.0, 1000.0)?;
+    let face = match params.get("face").and_then(Value::as_array).and_then(|a| a.first()) {
+        Some(pick) => Some(face_frame(pick)?),
+        None => None,
+    };
+
     let code = QrCode::encode_text(text, ecc).map_err(|_| invalid("text", "too long for a QR code"))?;
     let n = usize::try_from(code.size()).map_err(|_| invalid("text", "empty code"))?;
     let side = (n as f64 + 2.0 * margin) * module;
 
-    commands::run(
-        "solid.box",
-        &json!({"name": "QR plate", "body_name": "QR plate",
-                "corner": [0, 0, 0], "length": side, "width": side, "height": plate})
-        .to_string(),
-    )?;
+    // On a face the code has no plate of its own: it joins the picked body or is cut into it.
+    let target = match &face {
+        Some(f) => f.body.clone(),
+        None => {
+            commands::run(
+                "solid.box",
+                &json!({"name": "QR plate", "body_name": "QR plate",
+                        "corner": [0, 0, 0], "length": side, "width": side, "height": plate})
+                .to_string(),
+            )?;
+            "QR plate".to_string()
+        }
+    };
 
     let rects = merge(&code, n);
+    let base = if face.is_some() { 0.0 } else { plate };
     let (z0, dz, op) = if engrave {
-        (plate - height, height + 0.5, "cut")
+        (base - height, height + 0.5, "cut")
     } else {
-        (plate, height, "join")
+        (base, height, "join")
+    };
+    // Without a face the code sits on the plate with its margin; on a face it is centred on the
+    // face's centre, so the modules are laid out around the origin and moved afterwards.
+    let (ox, oy) = match face {
+        Some(_) => (-(n as f64) * module / 2.0, -(n as f64) * module / 2.0),
+        None => (margin * module, margin * module),
     };
     // One body per rectangle, then a single combine: a join or cut per rectangle gets slower with
     // every one already in the plate.
     let mut tools = Vec::with_capacity(rects.len());
     for (i, (x, y, w, h)) in rects.iter().enumerate() {
         // Row 0 of a code is its top edge: flip it so the code reads correctly seen from above.
-        let x0 = (margin + *x as f64) * module;
-        let y0 = (margin + (n - y - h) as f64) * module;
+        let x0 = ox + *x as f64 * module;
+        let y0 = oy + (n - y - h) as f64 * module;
         let name = format!("QR module {i}");
         let args = json!({
             "body_name": name,
@@ -82,12 +102,106 @@ fn qr(params: &Value) -> Result<String, PluginError> {
         commands::run("solid.box", &args.to_string())?;
         tools.push(name);
     }
+    if let Some(f) = &face {
+        place(f, &tools, offset)?;
+    }
     commands::run(
         "solid.combine",
-        &json!({"target": "QR plate", "tools": tools, "operation": op}).to_string(),
+        &json!({"target": target, "tools": tools, "operation": op}).to_string(),
     )?;
     Ok(json!({"modules": n, "side_mm": side, "boxes": rects.len(), "mode": if engrave { "engrave" } else { "relief" }})
         .to_string())
+}
+
+/// A picked planar face: its body, outward normal and centre.
+struct Face {
+    body: String,
+    normal: [f64; 3],
+    centre: [f64; 3],
+}
+
+/// Looks the picked face up: the pick names a body and a face index, `model.faces` gives its plane.
+fn face_frame(pick: &Value) -> Result<Face, PluginError> {
+    let bad = |why: &str| invalid("face", why.to_string());
+    let body = pick.get("body").and_then(Value::as_str).ok_or_else(|| bad("pick a face of a body"))?;
+    let index = pick.get("index").and_then(Value::as_u64).ok_or_else(|| bad("the pick has no face index"))?;
+    let reply = commands::run("model.faces", &json!({"body": body}).to_string())?;
+    let reply: Value = serde_json::from_str(&reply).map_err(|e| invalid("face", e))?;
+    let face = reply
+        .get("faces")
+        .and_then(Value::as_array)
+        .and_then(|faces| faces.iter().find(|f| f.get("index").and_then(Value::as_u64) == Some(index)))
+        .ok_or_else(|| bad("no such face"))?;
+    let normal = vec3(face.get("plane_normal")).ok_or_else(|| bad("the face is not flat"))?;
+    let centre = vec3(face.get("centroid")).ok_or_else(|| bad("the face has no centre"))?;
+    let len = norm(normal);
+    if len.is_nan() || len <= 1e-9 {
+        return Err(bad("the face is not flat"));
+    }
+    Ok(Face { body: body.to_string(), normal: scale(normal, 1.0 / len), centre })
+}
+
+fn vec3(v: Option<&Value>) -> Option<[f64; 3]> {
+    let a = v?.as_array()?;
+    let f = |i: usize| a.get(i).and_then(Value::as_f64).filter(|x| x.is_finite());
+    Some([f(0)?, f(1)?, f(2)?])
+}
+
+fn norm(a: [f64; 3]) -> f64 {
+    (a[0] * a[0] + a[1] * a[1] + a[2] * a[2]).sqrt()
+}
+
+fn scale(a: [f64; 3], k: f64) -> [f64; 3] {
+    [a[0] * k, a[1] * k, a[2] * k]
+}
+
+fn cross(a: [f64; 3], b: [f64; 3]) -> [f64; 3] {
+    [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]
+}
+
+/// Turns the modules built around the origin (code in XY, height along Z) so Z becomes the face's
+/// normal, with the top of the code toward world Z (toward world Y on a face that looks up or
+/// down), then moves them onto the face's centre, `offset` mm along the normal.
+fn place(face: &Face, tools: &[String], offset: f64) -> Result<(), PluginError> {
+    let n = face.normal;
+    // The code's up direction: world Z, or world Y when the face is nearly horizontal.
+    let world_up = if n[2].abs() > 0.999 { [0.0, 1.0, 0.0] } else { [0.0, 0.0, 1.0] };
+    let d = world_up[0] * n[0] + world_up[1] * n[1] + world_up[2] * n[2];
+    let up = [world_up[0] - d * n[0], world_up[1] - d * n[1], world_up[2] - d * n[2]];
+    let up = scale(up, 1.0 / norm(up));
+    let right = cross(up, n);
+
+    // The rotation whose columns are right, up, n, as an axis and an angle.
+    let trace = right[0] + up[1] + n[2];
+    let angle = ((trace - 1.0) / 2.0).clamp(-1.0, 1.0).acos();
+    let axis = if angle < 1e-9 {
+        None
+    } else if angle > std::f64::consts::PI - 1e-6 {
+        // A half turn: the axis is the column of (R + I) / 2 that is largest.
+        let cols = [
+            [right[0] + 1.0, right[1], right[2]],
+            [up[0], up[1] + 1.0, up[2]],
+            [n[0], n[1], n[2] + 1.0],
+        ];
+        cols.into_iter().max_by(|a, b| norm(*a).total_cmp(&norm(*b)))
+    } else {
+        Some([up[2] - n[1], n[0] - right[2], right[1] - up[0]])
+    };
+    let axis = axis.filter(|a| norm(*a) > 1e-12).map(|a| scale(a, 1.0 / norm(a)));
+
+    let at = [
+        face.centre[0] + n[0] * offset,
+        face.centre[1] + n[1] * offset,
+        face.centre[2] + n[2] * offset,
+    ];
+    let mut args = json!({"bodies": tools, "translate": at});
+    if let Some(axis) = axis {
+        args["axis"] = json!(axis);
+        args["angle"] = json!(angle.to_degrees());
+        args["origin"] = json!([0, 0, 0]);
+    }
+    commands::run("solid.move", &args.to_string())?;
+    Ok(())
 }
 
 /// Dark modules merged into as few rectangles as a greedy sweep finds: (x, y, width, height).
