@@ -102,27 +102,40 @@ fn qr(params: &Value) -> Result<String, PluginError> {
         return Err(invalid("text", "too long to draw: use a shorter text or link"));
     }
     let half = n as f64 * module / 2.0;
-    for points in &loops {
+    // The sketch's regions alternate dark and light (a ring's hole is a region of its own), and the
+    // app extrudes every region it is given. So the extrusion is told which ones are dark: one per
+    // outer loop, by its curves; the loops inside it are its holes.
+    let mut dark = Vec::new();
+    for (points, outer) in &loops {
         // The grid's y runs down and the sketch's y axis points up.
         let pts: Vec<[f64; 2]> = points
             .iter()
             .map(|&(x, y)| [f64::from(x) * module - half, (n as f64 - f64::from(y)) * module - half])
             .collect();
-        commands::run("sketch.line", &json!({"points": pts, "closed": true, "connect": false}).to_string())?;
+        let reply = commands::run("sketch.line", &json!({"points": pts, "closed": true, "connect": false}).to_string())?;
+        if *outer {
+            let reply: Value = serde_json::from_str(&reply).map_err(|e| invalid("sketch", e))?;
+            let curves = reply
+                .get("created")
+                .and_then(|c| c.get("curves"))
+                .cloned()
+                .ok_or_else(|| invalid("sketch", "the sketch gave no curve ids"))?;
+            dark.push(json!({"curves": curves}));
+        }
     }
     commands::run("sketch.finish", "{}")?;
     // Modules lifted off the face touch nothing, so they are kept in one body explicitly.
     commands::run(
         "solid.extrude",
         &json!({
-            "sketch": "QR code", "name": "QR code", "distance": height,
+            "sketch": "QR code", "name": "QR code", "distance": height, "profiles": dark,
             "operation": if engrave { "cut" } else { "join" },
             "direction": if engrave { "negative" } else { "positive" },
             "targets": [target], "touching": "one_body",
         })
         .to_string(),
     )?;
-    Ok(json!({"modules": n, "side_mm": side, "outlines": loops.len(), "style": if engrave { "engraved" } else { "raised" }})
+    Ok(json!({"modules": n, "side_mm": side, "outlines": loops.len(), "dark_modules": dark_modules(&code, n), "style": if engrave { "engraved" } else { "raised" }})
         .to_string())
 }
 
@@ -188,7 +201,7 @@ type Pt = (i32, i32);
 /// The outline of every dark region as closed loops of grid points, with no line between two
 /// neighbouring dark modules and none where a loop runs straight on. Dark regions that only touch at
 /// a corner are kept as separate loops.
-fn outlines(code: &QrCode, n: usize) -> Vec<Vec<Pt>> {
+fn outlines(code: &QrCode, n: usize) -> Vec<(Vec<Pt>, bool)> {
     let size = i32::try_from(n).unwrap_or(0);
     let dark = |x: i32, y: i32| x >= 0 && y >= 0 && x < size && y < size && code.get_module(x, y);
     // Each dark module's edges run clockwise on screen (the dark side on the right of travel); an
@@ -248,9 +261,29 @@ fn outlines(code: &QrCode, n: usize) -> Vec<Vec<Pt>> {
                 _ => break,
             }
         }
-        loops.push(straighten(points));
+        let points = straighten(points);
+        loops.push((points.clone(), is_outer(&points)));
     }
     loops
+}
+
+/// How many modules of the code are dark.
+fn dark_modules(code: &QrCode, n: usize) -> usize {
+    let size = i32::try_from(n).unwrap_or(0);
+    (0..size).flat_map(|y| (0..size).map(move |x| (x, y))).filter(|&(x, y)| code.get_module(x, y)).count()
+}
+
+/// Whether a loop encloses dark modules (an outer edge) rather than a light hole. The loops run with
+/// the dark side on the right, which is clockwise on screen, where y runs down: a positive area.
+fn is_outer(points: &[Pt]) -> bool {
+    let len = points.len();
+    let twice_area: i64 = (0..len)
+        .filter_map(|i| {
+            let (a, b) = (points.get(i)?, points.get((i + 1) % len)?);
+            Some(i64::from(a.0) * i64::from(b.1) - i64::from(b.0) * i64::from(a.1))
+        })
+        .sum();
+    twice_area > 0
 }
 
 /// A closed loop without the points where it runs straight on.
