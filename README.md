@@ -13,26 +13,24 @@ editable geometry, ready for 3D printing.
 
 | Field | Default | Meaning |
 |---|---|---|
-| Face (optional) | none | A flat face to put the code on; without one, the code gets a new plate |
-| Offset from the face | 0 mm | Along the face's normal: `+` moves the code away from the face, `-` into the body |
-| Keep everything in one body | on | Also when the code is lifted off the face; off makes each loose module a body of its own |
-| Text or URL | `https://example.com` | What the code encodes (at most 500 bytes) |
-| Error correction | `M` | `L`, `M`, `Q` or `H` |
-| Mode | `relief` | `relief` raises the modules; `engrave` cuts them into the plate |
-| Module size | 1 mm | Side of one QR module |
-| Relief height / engraving depth | 0.6 mm | Must be below the plate thickness when engraving |
-| Plate thickness | 2 mm | |
-| Margin (modules) | 2 | Blank border around the code |
+| Text or link | `https://example.com` | What the code says (at most 500 characters) |
+| Put it on a face (optional) | none | Click a flat face of your model; leave empty to get a new plate |
+| Style | Raised | Raised, or Engraved into the plate or model |
+| Size | 30 mm | Width of the code |
+| Height or depth | 0.6 mm | How far the code stands out, or how deep it is cut |
+| Move away from the face | 0 mm | Positive lifts the code off the face, negative sinks it into the model (needs a face) |
+
+Everything else is chosen for you: a plate 2 mm thick with a small blank border, a level of error
+correction that survives small print flaws, and a single body for the whole result.
 
 With a face picked, the code is centred on the face's centre, upright toward world Z (toward world Y on a
-horizontal face), and it joins the picked body (`relief`) or is cut into it (`engrave`). The plate thickness
-and margin are not used then. An offset above zero lifts the code off the face, so its modules touch nothing: they stay in the same body
-unless you turn off "Keep everything in one body"; a negative one sinks them into the body. A code larger than the face overhangs it, so pick a
-face that is big enough or reduce the module size.
+horizontal face), and it joins the picked body (Raised) or is cut into it (Engraved). A code larger than the
+face overhangs it, so pick a bigger face or reduce the size. If the size is too small for the text to print
+well (a module under 0.4 mm), the plugin says how big it needs to be.
 
 One run is one undo step, and an invalid input changes nothing.
 
-From a script or an MCP client, the entry is `qr-code.qr` with the same field names as parameters.
+From a script or an MCP client, the entry is `qr-code.qr`, with the parameters `text`, `face`, `style` (`raised` or `engraved`), `size`, `height` and `offset`.
 
 ## How it works
 
