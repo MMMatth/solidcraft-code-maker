@@ -1,0 +1,23 @@
+{
+ "entry": "qr",
+ "design": "block.sc",
+ "params": {
+  "text": "HI",
+  "correction": "L",
+  "module_size": 0.3,
+  "height": 0.6,
+  "face": [
+   {
+    "type": "face",
+    "body": "Block",
+    "index": 4
+   }
+  ],
+  "offset": 0
+ },
+ "expect": {
+  "model": {
+   "body_count": 1
+  }
+ }
+}
