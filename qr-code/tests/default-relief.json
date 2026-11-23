@@ -1,0 +1,5 @@
+{
+  "entry": "qr",
+  "params": {"text": "HELLO", "correction": "L", "mode": "relief"},
+  "expect": {"model": {"body_count": 1}}
+}

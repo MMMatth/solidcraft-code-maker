@@ -1,0 +1,26 @@
+{
+  "id": "qr-code",
+  "name": "QR Code",
+  "version": "0.1.0",
+  "description": "Adds a plate with a QR code, raised or engraved.",
+  "capabilities": ["commands@0.2"],
+  "runtime": {
+    "module": "qr-code.wasm",
+    "commands": ["solid.box", "solid.combine"],
+    "entries": [{
+      "name": "qr",
+      "effect": "edit",
+      "input_schema": {"type": "object", "properties": {
+        "text": {"type": "string", "title": "Text or URL", "default": "https://example.com", "maxLength": 500},
+        "correction": {"type": "string", "title": "Error correction", "default": "M", "enum": ["L", "M", "Q", "H"]},
+        "mode": {"type": "string", "title": "Mode", "default": "relief", "enum": ["relief", "engrave"]},
+        "module_size": {"type": "number", "title": "Module size", "default": 1, "minimum": 0.2, "maximum": 20, "unit": "mm"},
+        "height": {"type": "number", "title": "Relief height / engraving depth", "default": 0.6, "minimum": 0.1, "maximum": 20, "unit": "mm"},
+        "plate_thickness": {"type": "number", "title": "Plate thickness", "default": 2, "minimum": 0.2, "maximum": 50, "unit": "mm"},
+        "margin": {"type": "number", "title": "Margin (modules)", "default": 2, "minimum": 0, "maximum": 10}
+      }},
+      "slots": [{"kind": "ribbon", "name": "Model"}]
+    }],
+    "limits": {"fuel": 5000000000, "memory_mib": 32, "deadline_ms": 20000}
+  }
+}
