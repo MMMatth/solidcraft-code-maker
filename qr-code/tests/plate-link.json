@@ -1,1 +1,1 @@
-{"entry":"qr","params":{"text":"https://example.com","size":30},"expect":{"model":{"body_count":1}}}
+{"entry":"qr","params":{"text":"https://example.com","size":30},"expect":{"reply":{"result":{"dark_modules":330}},"model":{"body_count":1,"total":{"volume_mm3":2707.2}}}}
