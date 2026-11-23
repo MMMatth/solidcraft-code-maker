@@ -1,5 +1,0 @@
-{
-  "entry": "qr",
-  "params": {"text": "HELLO", "correction": "L", "mode": "engrave"},
-  "expect": {"model": {"body_count": 1}}
-}

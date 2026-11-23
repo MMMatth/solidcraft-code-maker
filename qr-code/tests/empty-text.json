@@ -1,0 +1,9 @@
+{
+ "entry": "qr",
+ "params": {
+  "text": ""
+ },
+ "expect": {
+  "error": "invalid_input"
+ }
+}

@@ -1,0 +1,12 @@
+{
+ "entry": "qr",
+ "params": {
+  "text": "HELLO",
+  "size": 25
+ },
+ "expect": {
+  "model": {
+   "body_count": 1
+  }
+ }
+}

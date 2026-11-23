@@ -3,9 +3,7 @@
  "design": "block.sc",
  "params": {
   "text": "HI",
-  "correction": "L",
-  "module_size": 1,
-  "height": 0.6,
+  "size": 21,
   "face": [
    {
     "type": "face",

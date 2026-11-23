@@ -3,17 +3,14 @@
  "design": "block.sc",
  "params": {
   "text": "HI",
-  "correction": "L",
-  "module_size": 0.3,
-  "height": 0.6,
+  "size": 8.4,
   "face": [
    {
     "type": "face",
     "body": "Block",
     "index": 4
    }
-  ],
-  "offset": 0
+  ]
  },
  "expect": {
   "model": {

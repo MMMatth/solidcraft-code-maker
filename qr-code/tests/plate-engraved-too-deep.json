@@ -1,0 +1,11 @@
+{
+ "entry": "qr",
+ "params": {
+  "text": "HELLO",
+  "style": "engraved",
+  "height": 3
+ },
+ "expect": {
+  "error": "invalid_input"
+ }
+}

@@ -1,5 +1,0 @@
-{
-  "entry": "qr",
-  "params": {"text": "HELLO", "mode": "engrave", "height": 3, "plate_thickness": 2},
-  "expect": {"error": "invalid_input"}
-}
