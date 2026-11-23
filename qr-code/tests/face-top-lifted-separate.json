@@ -1,0 +1,27 @@
+{
+ "entry": "qr",
+ "design": "block.sc",
+ "params": {
+  "text": "HI",
+  "correction": "L",
+  "module_size": 1,
+  "height": 0.6,
+  "face": [
+   {
+    "type": "face",
+    "body": "Block",
+    "index": 0
+   }
+  ],
+  "offset": 3,
+  "one_body": false
+ },
+ "expect": {
+  "model": {
+   "body_count": 23,
+   "total": {
+    "volume_mm3": 12127.2
+   }
+  }
+ }
+}

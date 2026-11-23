@@ -17,7 +17,7 @@
  },
  "expect": {
   "model": {
-   "body_count": 23,
+   "body_count": 1,
    "total": {
     "volume_mm3": 12127.2
    }
