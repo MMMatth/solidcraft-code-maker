@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: qr-code-src
+      - name: Install wasm-tools
+        run: cargo install wasm-tools --locked --version 1.263.0
+      - name: Clippy
+        run: cargo clippy --manifest-path qr-code-src/Cargo.toml --target wasm32-unknown-unknown --locked -- -D warnings
+      - name: Build the zip
+        run: scripts/package.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: qr-code-zip
+          path: dist/*.zip
