@@ -1,7 +1,7 @@
 {
   "id": "qr-code",
   "name": "QR Code",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Puts a QR code on a plate or on a face of your model.",
   "capabilities": [
     "commands@0.2"
@@ -10,8 +10,10 @@
     "module": "qr-code.wasm",
     "commands": [
       "solid.box",
-      "solid.combine",
-      "solid.move",
+      "sketch.create",
+      "sketch.rectangle.two_point",
+      "sketch.finish",
+      "solid.extrude",
       "model.faces"
     ],
     "entries": [

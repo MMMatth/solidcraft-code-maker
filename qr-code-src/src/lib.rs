@@ -65,9 +65,18 @@ fn qr(params: &Value) -> Result<String, PluginError> {
     let plate = PLATE;
     let side = (n as f64 + 2.0 * margin) * module;
 
-    // On a face the code has no plate of its own: it joins the picked body or is cut into it.
-    let target = match &face {
-        Some(f) => f.body.clone(),
+    // Where the sketch lies and how its axes run: on a face, centred on the face's centre
+    // (`offset` along its normal); otherwise on top of a new plate.
+    let (origin, x_dir, y_dir, target) = match &face {
+        Some(f) => {
+            let (right, up) = axes(f.normal);
+            let o = [
+                f.centre[0] + f.normal[0] * offset,
+                f.centre[1] + f.normal[1] * offset,
+                f.centre[2] + f.normal[2] * offset,
+            ];
+            (o, right, up, f.body.clone())
+        }
         None => {
             commands::run(
                 "solid.box",
@@ -75,49 +84,40 @@ fn qr(params: &Value) -> Result<String, PluginError> {
                         "corner": [0, 0, 0], "length": side, "width": side, "height": plate})
                 .to_string(),
             )?;
-            "QR plate".to_string()
+            ([side / 2.0, side / 2.0, plate], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0], "QR plate".to_string())
         }
     };
 
-    let rects = merge(&code, n);
-    let base = if face.is_some() { 0.0 } else { plate };
-    let (z0, dz, op) = if engrave {
-        (base - height, height + 0.5, "cut")
-    } else {
-        (base, height, "join")
-    };
-    // Without a face the code sits on the plate with its margin; on a face it is centred on the
-    // face's centre, so the modules are laid out around the origin and moved afterwards.
-    let (ox, oy) = match face {
-        Some(_) => (-(n as f64) * module / 2.0, -(n as f64) * module / 2.0),
-        None => (margin * module, margin * module),
-    };
-    // One body per rectangle, then a single combine: a join or cut per rectangle gets slower with
-    // every one already in the plate.
-    let mut tools = Vec::with_capacity(rects.len());
-    for (i, (x, y, w, h)) in rects.iter().enumerate() {
-        // Row 0 of a code is its top edge: flip it so the code reads correctly seen from above.
-        let x0 = ox + *x as f64 * module;
-        let y0 = oy + (n - y - h) as f64 * module;
-        let name = format!("QR module {i}");
-        let args = json!({
-            "body_name": name,
-            "corner": [x0, y0, z0],
-            "length": *w as f64 * module, "width": *h as f64 * module, "height": dz,
-        });
-        commands::run("solid.box", &args.to_string())?;
-        tools.push(name);
-    }
-    if let Some(f) = &face {
-        place(f, &tools, offset)?;
-    }
-    // Modules lifted off the face touch nothing, so they are kept in one body explicitly.
-    let touching = "one_body";
+    // The code is one sketch of rectangles, then one extrusion: it can be edited or moved afterwards.
     commands::run(
-        "solid.combine",
-        &json!({"target": target, "tools": tools, "operation": op, "touching": touching}).to_string(),
+        "sketch.create",
+        &json!({"name": "QR code", "plane": {"origin": origin, "x_dir": x_dir, "y_dir": y_dir}}).to_string(),
     )?;
-    Ok(json!({"modules": n, "side_mm": side, "boxes": rects.len(), "mode": if engrave { "engrave" } else { "relief" }})
+    let rects = merge(&code, n);
+    let half = n as f64 * module / 2.0;
+    for (x, y, w, h) in &rects {
+        // Row 0 of a code is its top edge, and the sketch's y axis points up.
+        let x0 = *x as f64 * module - half;
+        let y0 = (n - y - h) as f64 * module - half;
+        let args = json!({
+            "p0": [x0, y0], "p1": [x0 + *w as f64 * module, y0 + *h as f64 * module],
+            "connect": false,
+        });
+        commands::run("sketch.rectangle.two_point", &args.to_string())?;
+    }
+    commands::run("sketch.finish", "{}")?;
+    // Modules lifted off the face touch nothing, so they are kept in one body explicitly.
+    commands::run(
+        "solid.extrude",
+        &json!({
+            "sketch": "QR code", "name": "QR code", "distance": height,
+            "operation": if engrave { "cut" } else { "join" },
+            "direction": if engrave { "negative" } else { "positive" },
+            "targets": [target], "touching": "one_body",
+        })
+        .to_string(),
+    )?;
+    Ok(json!({"modules": n, "side_mm": side, "rectangles": rects.len(), "style": if engrave { "engraved" } else { "raised" }})
         .to_string())
 }
 
@@ -167,49 +167,14 @@ fn cross(a: [f64; 3], b: [f64; 3]) -> [f64; 3] {
     [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]
 }
 
-/// Turns the modules built around the origin (code in XY, height along Z) so Z becomes the face's
-/// normal, with the top of the code toward world Z (toward world Y on a face that looks up or
-/// down), then moves them onto the face's centre, `offset` mm along the normal.
-fn place(face: &Face, tools: &[String], offset: f64) -> Result<(), PluginError> {
-    let n = face.normal;
-    // The code's up direction: world Z, or world Y when the face is nearly horizontal.
+/// The code's axes on a face: up is world Z (world Y on a nearly horizontal face), so the code reads
+/// upright; right is up x normal, so right x up is the normal and the code is not mirrored.
+fn axes(n: [f64; 3]) -> ([f64; 3], [f64; 3]) {
     let world_up = if n[2].abs() > 0.999 { [0.0, 1.0, 0.0] } else { [0.0, 0.0, 1.0] };
     let d = world_up[0] * n[0] + world_up[1] * n[1] + world_up[2] * n[2];
     let up = [world_up[0] - d * n[0], world_up[1] - d * n[1], world_up[2] - d * n[2]];
     let up = scale(up, 1.0 / norm(up));
-    let right = cross(up, n);
-
-    // The rotation whose columns are right, up, n, as an axis and an angle.
-    let trace = right[0] + up[1] + n[2];
-    let angle = ((trace - 1.0) / 2.0).clamp(-1.0, 1.0).acos();
-    let axis = if angle < 1e-9 {
-        None
-    } else if angle > std::f64::consts::PI - 1e-6 {
-        // A half turn: the axis is the column of (R + I) / 2 that is largest.
-        let cols = [
-            [right[0] + 1.0, right[1], right[2]],
-            [up[0], up[1] + 1.0, up[2]],
-            [n[0], n[1], n[2] + 1.0],
-        ];
-        cols.into_iter().max_by(|a, b| norm(*a).total_cmp(&norm(*b)))
-    } else {
-        Some([up[2] - n[1], n[0] - right[2], right[1] - up[0]])
-    };
-    let axis = axis.filter(|a| norm(*a) > 1e-12).map(|a| scale(a, 1.0 / norm(a)));
-
-    let at = [
-        face.centre[0] + n[0] * offset,
-        face.centre[1] + n[1] * offset,
-        face.centre[2] + n[2] * offset,
-    ];
-    let mut args = json!({"bodies": tools, "translate": at});
-    if let Some(axis) = axis {
-        args["axis"] = json!(axis);
-        args["angle"] = json!(angle.to_degrees());
-        args["origin"] = json!([0, 0, 0]);
-    }
-    commands::run("solid.move", &args.to_string())?;
-    Ok(())
+    (cross(up, n), up)
 }
 
 /// Dark modules merged into as few rectangles as a greedy sweep finds: (x, y, width, height).
