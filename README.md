@@ -15,6 +15,7 @@ editable geometry, ready for 3D printing.
 |---|---|---|
 | Face (optional) | none | A flat face to put the code on; without one, the code gets a new plate |
 | Offset from the face | 0 mm | Along the face's normal: `+` moves the code away from the face, `-` into the body |
+| Keep everything in one body | on | Also when the code is lifted off the face; off makes each loose module a body of its own |
 | Text or URL | `https://example.com` | What the code encodes (at most 500 bytes) |
 | Error correction | `M` | `L`, `M`, `Q` or `H` |
 | Mode | `relief` | `relief` raises the modules; `engrave` cuts them into the plate |
@@ -25,8 +26,8 @@ editable geometry, ready for 3D printing.
 
 With a face picked, the code is centred on the face's centre, upright toward world Z (toward world Y on a
 horizontal face), and it joins the picked body (`relief`) or is cut into it (`engrave`). The plate thickness
-and margin are not used then. An offset above zero lifts the code off the face, so its modules become
-separate bodies; a negative one sinks them into the body. A code larger than the face overhangs it, so pick a
+and margin are not used then. An offset above zero lifts the code off the face, so its modules touch nothing: they stay in the same body
+unless you turn off "Keep everything in one body"; a negative one sinks them into the body. A code larger than the face overhangs it, so pick a
 face that is big enough or reduce the module size.
 
 One run is one undo step, and an invalid input changes nothing.
