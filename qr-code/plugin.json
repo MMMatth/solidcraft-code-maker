@@ -11,7 +11,7 @@
     "commands": [
       "solid.box",
       "sketch.create",
-      "sketch.rectangle.two_point",
+      "sketch.line",
       "sketch.finish",
       "solid.extrude",
       "model.faces"

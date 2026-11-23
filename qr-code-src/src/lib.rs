@@ -5,12 +5,15 @@ use craft::plugin::types::{FieldFailure, PluginError};
 use exports::craft::plugin::entry::Guest;
 use qrcodegen::{QrCode, QrCodeEcc};
 use serde_json::{Value, json};
+use std::collections::BTreeMap;
 
 /// Longest text accepted, in bytes. A version-40 code holds more, but the model would be huge.
 const MAX_TEXT: usize = 500;
 /// Plate thickness and quiet-zone width (in modules) of a code on a new plate.
 const PLATE: f64 = 2.0;
 const MARGIN: f64 = 2.0;
+/// Most outlines one run draws: the host allows 256 calls, and a few go to the other commands.
+const MAX_LOOPS: usize = 240;
 /// Smallest module that prints legibly with a common 0.4 mm nozzle.
 const MIN_MODULE: f64 = 0.4;
 
@@ -93,17 +96,19 @@ fn qr(params: &Value) -> Result<String, PluginError> {
         "sketch.create",
         &json!({"name": "QR code", "plane": {"origin": origin, "x_dir": x_dir, "y_dir": y_dir}}).to_string(),
     )?;
-    let rects = merge(&code, n);
+    let loops = outlines(&code, n);
+    // A plugin may make only 256 host calls in a run, and each loop is one of them.
+    if loops.len() > MAX_LOOPS {
+        return Err(invalid("text", "too long to draw: use a shorter text or link"));
+    }
     let half = n as f64 * module / 2.0;
-    for (x, y, w, h) in &rects {
-        // Row 0 of a code is its top edge, and the sketch's y axis points up.
-        let x0 = *x as f64 * module - half;
-        let y0 = (n - y - h) as f64 * module - half;
-        let args = json!({
-            "p0": [x0, y0], "p1": [x0 + *w as f64 * module, y0 + *h as f64 * module],
-            "connect": false,
-        });
-        commands::run("sketch.rectangle.two_point", &args.to_string())?;
+    for points in &loops {
+        // The grid's y runs down and the sketch's y axis points up.
+        let pts: Vec<[f64; 2]> = points
+            .iter()
+            .map(|&(x, y)| [f64::from(x) * module - half, (n as f64 - f64::from(y)) * module - half])
+            .collect();
+        commands::run("sketch.line", &json!({"points": pts, "closed": true, "connect": false}).to_string())?;
     }
     commands::run("sketch.finish", "{}")?;
     // Modules lifted off the face touch nothing, so they are kept in one body explicitly.
@@ -117,7 +122,7 @@ fn qr(params: &Value) -> Result<String, PluginError> {
         })
         .to_string(),
     )?;
-    Ok(json!({"modules": n, "side_mm": side, "rectangles": rects.len(), "style": if engrave { "engraved" } else { "raised" }})
+    Ok(json!({"modules": n, "side_mm": side, "outlines": loops.len(), "style": if engrave { "engraved" } else { "raised" }})
         .to_string())
 }
 
@@ -177,36 +182,90 @@ fn axes(n: [f64; 3]) -> ([f64; 3], [f64; 3]) {
     (cross(up, n), up)
 }
 
-/// Dark modules merged into as few rectangles as a greedy sweep finds: (x, y, width, height).
-fn merge(code: &QrCode, n: usize) -> Vec<(usize, usize, usize, usize)> {
-    let dark = |x: usize, y: usize| match (i32::try_from(x), i32::try_from(y)) {
-        (Ok(x), Ok(y)) => code.get_module(x, y),
-        _ => false,
-    };
-    let mut used = vec![false; n * n];
-    let free = |used: &[bool], x: usize, y: usize| dark(x, y) && !used.get(y * n + x).copied().unwrap_or(true);
-    let mut out = Vec::new();
-    for y in 0..n {
-        for x in 0..n {
-            if !free(&used, x, y) {
+/// A point of the code's grid, in modules: x to the right, y down, (0, 0) its top-left corner.
+type Pt = (i32, i32);
+
+/// The outline of every dark region as closed loops of grid points, with no line between two
+/// neighbouring dark modules and none where a loop runs straight on. Dark regions that only touch at
+/// a corner are kept as separate loops.
+fn outlines(code: &QrCode, n: usize) -> Vec<Vec<Pt>> {
+    let size = i32::try_from(n).unwrap_or(0);
+    let dark = |x: i32, y: i32| x >= 0 && y >= 0 && x < size && y < size && code.get_module(x, y);
+    // Each dark module's edges run clockwise on screen (the dark side on the right of travel); an
+    // edge shared with another dark module cancels out.
+    let mut edges: Vec<(Pt, Pt)> = Vec::new();
+    for y in 0..size {
+        for x in 0..size {
+            if !dark(x, y) {
                 continue;
             }
-            let mut w = 1;
-            while x + w < n && free(&used, x + w, y) {
-                w += 1;
+            if !dark(x, y - 1) {
+                edges.push(((x, y), (x + 1, y)));
             }
-            let mut h = 1;
-            while y + h < n && (x..x + w).all(|xx| free(&used, xx, y + h)) {
-                h += 1;
+            if !dark(x + 1, y) {
+                edges.push(((x + 1, y), (x + 1, y + 1)));
             }
-            for yy in y..y + h {
-                for xx in x..x + w {
-                    if let Some(u) = used.get_mut(yy * n + xx) {
-                        *u = true;
-                    }
-                }
+            if !dark(x, y + 1) {
+                edges.push(((x + 1, y + 1), (x, y + 1)));
             }
-            out.push((x, y, w, h));
+            if !dark(x - 1, y) {
+                edges.push(((x, y + 1), (x, y)));
+            }
+        }
+    }
+    let mut leaving: BTreeMap<Pt, Vec<usize>> = BTreeMap::new();
+    for (i, (from, _)) in edges.iter().enumerate() {
+        leaving.entry(*from).or_default().push(i);
+    }
+    let mut used = vec![false; edges.len()];
+    let mut loops = Vec::new();
+    for first in 0..edges.len() {
+        if used.get(first).copied().unwrap_or(true) {
+            continue;
+        }
+        let mut points = Vec::new();
+        let mut current = first;
+        for _ in 0..=edges.len() {
+            if let Some(u) = used.get_mut(current) {
+                *u = true;
+            }
+            let Some(&(from, to)) = edges.get(current) else { break };
+            points.push(from);
+            // Where several edges leave a point, turn right-most: it keeps hugging the same region.
+            let (dx, dy) = (to.0 - from.0, to.1 - from.1);
+            let turn = |i: usize| {
+                edges.get(i).map_or(i32::MIN, |(a, b)| dx * (b.1 - a.1) - dy * (b.0 - a.0))
+            };
+            let next = leaving
+                .get(&to)
+                .into_iter()
+                .flatten()
+                .copied()
+                .filter(|&i| i == first || !used.get(i).copied().unwrap_or(true))
+                .max_by_key(|&i| turn(i));
+            match next {
+                Some(i) if i != first => current = i,
+                _ => break,
+            }
+        }
+        loops.push(straighten(points));
+    }
+    loops
+}
+
+/// A closed loop without the points where it runs straight on.
+fn straighten(points: Vec<Pt>) -> Vec<Pt> {
+    let len = points.len();
+    let mut out = Vec::with_capacity(len);
+    for i in 0..len {
+        let (Some(prev), Some(here), Some(next)) =
+            (points.get((i + len - 1) % len), points.get(i), points.get((i + 1) % len))
+        else {
+            continue;
+        };
+        let cross = (here.0 - prev.0) * (next.1 - here.1) - (here.1 - prev.1) * (next.0 - here.0);
+        if cross != 0 {
+            out.push(*here);
         }
     }
     out
