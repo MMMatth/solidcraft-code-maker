@@ -34,12 +34,16 @@ From a script or an MCP client, the entry is `qr-code.qr`, with the parameters `
 
 ## How it works
 
-The QR matrix comes from the [`qrcodegen`](https://crates.io/crates/qrcodegen) crate. Neighbouring dark
-modules are merged into as few rectangles as a greedy sweep finds, and the plugin draws them in one sketch
-named "QR code", then extrudes it with one feature, also named "QR code". The result is two ordinary entries
-in the timeline, so you can edit the sketch, change the extrusion's height or move the sketch afterwards.
-On a face the sketch lies on a plane centred on the face (shifted by the offset along its normal); without a
-face it lies on top of a new plate.
+The QR matrix comes from the [`qrcodegen`](https://crates.io/crates/qrcodegen) crate. The plugin traces the
+outline of every dark region, module by module, so the sketch has the exact pixel shape of the code with no
+line between two neighbouring dark modules. It draws those outlines in one sketch named "QR code", then
+extrudes it with one feature, also named "QR code". The result is two ordinary entries in the timeline, so you
+can edit the sketch, change the extrusion's height or move the sketch afterwards. On a face the sketch lies on
+a plane centred on the face (shifted by the offset along its normal); without a face it lies on top of a new
+plate.
+
+A plugin may make only 256 host calls in one run and each outline is one call, so a very long text is refused
+with a message asking for a shorter one.
 
 ## Build
 
