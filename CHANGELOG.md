@@ -3,6 +3,9 @@
 All notable changes to the plugin. The format follows [Keep a Changelog](https://keepachangelog.com/),
 and the versions follow [Semantic Versioning](https://semver.org/).
 
+Version 0.5.0 is the first published release. Versions 0.1.0 to 0.4.0 were development steps of the first
+day, kept below for the history: they have no tag and no release.
+
 ## [0.5.0] - 2026-11-25
 
 ### Added
@@ -30,30 +33,26 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 - Running the plugin a second time in the same design failed with "another feature is called `QR code`".
 - A code sunk into a face no longer colours the part's own top face.
 
-## [0.4.0] - 2026-11-23
+## [0.4.0] - 2026-11-23 (not released)
 
 ### Changed
 - The code is drawn as one sketch and one extrusion of the outline of the dark modules, instead of many boxes,
   so it stays an editable sketch with no extra lines.
 
-## [0.3.0] - 2026-11-23
+## [0.3.0] - 2026-11-23 (not released)
 
 ### Changed
 - The form is reduced to plain settings: text, face, style, size and height. The technical choices are fixed.
 
-## [0.2.0] - 2026-11-23
+## [0.2.0] - 2026-11-23 (not released)
 
 ### Added
 - The code can go on a flat face of your model, with an offset along its normal.
 - The whole result stays in one body.
 
-## [0.1.0] - 2026-11-23
+## [0.1.0] - 2026-11-23 (not released)
 
 ### Added
 - First version: a plate carrying a QR code, raised or engraved.
 
 [0.5.0]: ../../releases/tag/v0.5.0
-[0.4.0]: ../../releases/tag/v0.4.0
-[0.3.0]: ../../releases/tag/v0.3.0
-[0.2.0]: ../../releases/tag/v0.2.0
-[0.1.0]: ../../releases/tag/v0.1.0
