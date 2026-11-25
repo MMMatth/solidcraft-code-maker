@@ -72,4 +72,5 @@ its checksum. The tag must match the `version` in `qr-code/plugin.json` and `qr-
 
 ## Licence
 
-TODO: choose a licence. `qrcodegen` is MIT-licensed.
+[MIT](LICENSE). The plugin includes [`qrcodegen`](https://crates.io/crates/qrcodegen) (MIT, Project Nayuki), which
+makes the QR matrix.
