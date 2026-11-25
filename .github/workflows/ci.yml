@@ -26,7 +26,7 @@ jobs:
         run: cargo clippy --manifest-path qr-code-src/Cargo.toml --target wasm32-unknown-unknown --locked -- -D warnings
       - name: Build the zip
         run: scripts/package.sh
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: qr-code-zip
           path: dist/*.zip
