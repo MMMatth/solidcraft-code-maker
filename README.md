@@ -5,6 +5,10 @@
 A [SolidCraft](https://github.com/tangency-labs/solidcraft) plugin that puts a QR code on a new plate or on a
 face of your model, raised or engraved, ready for 3D printing.
 
+<p align="center"><img src="docs/demo.gif" alt="A QR code raised on a plate, coloured, engraved, put on a face and repeated" width="480"></p>
+
+The demo shows real results of the plugin in SolidCraft.
+
 ## Install
 
 1. Download `qr-code-<version>.zip` from the [Releases](../../releases) page.
