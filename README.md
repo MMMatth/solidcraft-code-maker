@@ -28,11 +28,12 @@ face of your model, raised or engraved, ready for 3D printing.
 | Height or depth | 0.6 mm | How far it stands out, or how deep it is cut |
 | Move X / Y / Z | 0 mm | Moves the code (the new plate, or the code on a face) |
 | Move along | World axes | With a face: the world axes, or the face's own (X right, Y up, Z out of the face), to lift or sink the code on a slanted or vertical face |
-| Rotate | 0° | Turns the code on its face, counter-clockwise (needs a face) |
+| Rotate | 0° | Turns the code on its face, counter-clockwise (needs a face; refused without one) |
 
 Good to know:
 
 - The code is centred on the picked face and stays upright. A code larger than the face overhangs it.
+- Only flat faces work, such as the top of a cylinder. A curved face (the side of a cylinder) is refused with "the face is not flat".
 - A new plate is 2 mm thick with a small blank border. The whole result is one body.
 - Run it again in the same design and the new code is named `QR code 2`, `QR code 3`, and so on. A new plate with no move asked goes 5 mm to the right of what the design already holds.
 - The code is a sketch plus an extrusion, so you can edit it afterwards in the timeline. The colour is set once when the code is made: if you change the height or the sketch later, colour the new faces with the Appearance command.
@@ -42,7 +43,7 @@ Good to know:
 
 From a script or an MCP client the entry is `qr-code.qr`, with `text`, `face`, `style` (`raised` or `engraved`),
 `color` (`black`, `blue`, `red`, `green`, `orange`, `yellow`, `white` or `none`), `size`, `height`, `move_x`,
-`move_y`, `move_z` and `rotation`.
+`move_y`, `move_z`, `move_axes` (`world` or `face`) and `rotation`.
 
 ## How it works
 
@@ -66,7 +67,7 @@ solidcraft-cli plugin test qr-code
 
 ## Releases
 
-CI builds the zip on every push and pull request. Pushing a tag such as `v0.5.0` publishes a release with the zip and
+CI builds the zip on every push and pull request. A separate security workflow runs gitleaks (secrets), `cargo audit` and a dependency review (vulnerable dependencies) and actionlint (workflow files) on pushes, pull requests and every Monday, and Dependabot proposes weekly updates. Pushing a tag such as `v0.5.0` publishes a release with the zip and
 its checksum. The tag must match the `version` in `qr-code/plugin.json` and `qr-code-src/Cargo.toml`.
 
 ## Licence
