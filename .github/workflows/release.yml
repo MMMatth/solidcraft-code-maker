@@ -29,7 +29,16 @@ jobs:
         run: scripts/package.sh
       - name: Checksum
         run: cd dist && sha256sum -- *.zip > SHA256SUMS
+      - name: Notes from the changelog
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          awk -v v="$version" '
+            /^## \[/ { if (found) exit; if (index($0, "[" v "]")) { found = 1; next } }
+            found { print }
+          ' CHANGELOG.md > notes.md
+          [ -s notes.md ] || { echo "no section for $version in CHANGELOG.md" >&2; exit 1; }
+          cat notes.md
       - name: Publish the release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" dist/*.zip dist/SHA256SUMS --title "QR Code $GITHUB_REF_NAME" --generate-notes
+        run: gh release create "$GITHUB_REF_NAME" dist/*.zip dist/SHA256SUMS --title "QR Code $GITHUB_REF_NAME" --notes-file notes.md

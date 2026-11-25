@@ -71,6 +71,8 @@ solidcraft-cli plugin test qr-code
 
 ## Releases
 
+The changes of each version are in the [changelog](CHANGELOG.md); the release notes are taken from it.
+
 CI builds the zip on every push and pull request. A separate security workflow runs gitleaks (secrets), `cargo audit` and a dependency review (vulnerable dependencies) and actionlint (workflow files) on pushes, pull requests and every Monday, and Dependabot proposes weekly updates. Pushing a tag such as `v0.5.0` publishes a release with the zip and
 its checksum. The tag must match the `version` in `qr-code/plugin.json` and `qr-code-src/Cargo.toml`.
 
