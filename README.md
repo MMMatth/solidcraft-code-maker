@@ -45,7 +45,7 @@ Good to know:
 - A very long text is refused (about 100 characters of link): each outline of the code is one SolidCraft call, and a run may last at most 30 s.
 - Too small a size for the text (a module under 0.4 mm) is refused, and the message says the size needed.
 
-From a script or an MCP client the entry is `qr-code.qr`, with `text`, `face`, `style` (`raised` or `engraved`),
+From a script or an MCP client the entry is `qr-code.qr`. SolidCraft's MCP server exposes it as the tool `qr-code_qr`: call that tool directly (a generic `execute` of `qr-code.qr` asks for a plugin approval token first), with `text`, `face` (a pick of a body's face by `index`, `name` or a `point` on it), `style` (`raised` or `engraved`),
 `color` (`black`, `blue`, `red`, `green`, `orange`, `yellow`, `white` or `none`), `size`, `height`, `move_x`,
 `move_y`, `move_z`, `move_axes` (`world` or `face`) and `rotation`.
 

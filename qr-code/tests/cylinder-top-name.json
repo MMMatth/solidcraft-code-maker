@@ -1,0 +1,29 @@
+{
+ "entry": "qr",
+ "design": "cylinder.sc",
+ "params": {
+  "text": "HI",
+  "size": 15,
+  "face": [
+   {
+    "type": "face",
+    "body": "Cylinder",
+    "name": "F1:top"
+   }
+  ]
+ },
+ "expect": {
+  "reply": {
+   "result": {
+    "coloured_faces": 271
+   }
+  },
+  "model": {
+   "body_count": 1,
+   "total": {
+    "volume_mm3": 37764.0098
+   }
+  },
+  "tolerance": 0.001
+ }
+}

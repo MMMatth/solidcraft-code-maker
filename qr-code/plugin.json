@@ -1,7 +1,7 @@
 {
   "id": "qr-code",
   "name": "QR Code",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Puts a QR code on a plate or on a face of your model.",
   "capabilities": [
     "commands@0.2"

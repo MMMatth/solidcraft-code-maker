@@ -326,18 +326,42 @@ struct Face {
     centre: [f64; 3],
 }
 
-/// Looks the picked face up: the pick names a body and a face index, `model.faces` gives its plane.
+/// How far from a face's plane a picked point may be, in mm: clients round their numbers.
+const POINT_TOLERANCE: f64 = 0.01;
+
+/// Looks the picked face up. A pick names a body and the face by its `index` (what the dialog sends),
+/// its `name`, or a `point` on it (what an MCP client usually sends); `model.faces` gives its plane.
+/// With a point, the flat faces whose plane holds the point are the candidates, and the one whose
+/// centre is nearest wins.
 fn face_frame(pick: &Value) -> Result<Face, PluginError> {
     let bad = |why: &str| invalid("face", why.to_string());
     let body = pick.get("body").and_then(Value::as_str).ok_or_else(|| bad("pick a face of a body"))?;
-    let index = pick.get("index").and_then(Value::as_u64).ok_or_else(|| bad("the pick has no face index"))?;
     let reply = commands::run("model.faces", &json!({"body": body}).to_string())?;
     let reply: Value = serde_json::from_str(&reply).map_err(|e| invalid("face", e))?;
-    let face = reply
-        .get("faces")
-        .and_then(Value::as_array)
-        .and_then(|faces| faces.iter().find(|f| f.get("index").and_then(Value::as_u64) == Some(index)))
-        .ok_or_else(|| bad("no such face"))?;
+    let faces = reply.get("faces").and_then(Value::as_array).ok_or_else(|| bad("the body has no faces"))?;
+    let face = if let Some(index) = pick.get("index").and_then(Value::as_u64) {
+        faces.iter().find(|f| f.get("index").and_then(Value::as_u64) == Some(index)).ok_or_else(|| bad("no such face"))?
+    } else if let Some(name) = pick.get("name").and_then(Value::as_str) {
+        faces.iter().find(|f| f.get("name").and_then(Value::as_str) == Some(name)).ok_or_else(|| bad("no face has that name"))?
+    } else if let Some(point) = vec3(pick.get("point")) {
+        faces
+            .iter()
+            .filter_map(|f| {
+                let (normal, centre) = (vec3(f.get("plane_normal"))?, vec3(f.get("centroid"))?);
+                let len = norm(normal);
+                if len.is_nan() || len <= 1e-9 {
+                    return None;
+                }
+                let off = [point[0] - centre[0], point[1] - centre[1], point[2] - centre[2]];
+                // Distance from the point to the face's plane, and from the point to the face's centre.
+                (dot(off, normal) / len).abs().le(&POINT_TOLERANCE).then(|| (norm(off), f))
+            })
+            .min_by(|a, b| a.0.total_cmp(&b.0))
+            .map(|(_, f)| f)
+            .ok_or_else(|| bad("the point is not on a flat face (a curved face cannot carry the code)"))?
+    } else {
+        return Err(bad("the pick needs a face index, a face name or a point on the face"));
+    };
     let normal = vec3(face.get("plane_normal")).ok_or_else(|| bad("the face is not flat"))?;
     let centre = vec3(face.get("centroid")).ok_or_else(|| bad("the face has no centre"))?;
     let len = norm(normal);

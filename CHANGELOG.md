@@ -6,6 +6,14 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 Version 0.5.0 is the first published release. Versions 0.1.0 to 0.4.0 were development steps of the first
 day, kept below for the history: they have no tag and no release.
 
+## [0.5.1] - 2026-11-25
+
+### Fixed
+- A face given by a point on it, which is how an MCP client or a script usually picks one, was refused with
+  "the pick has no face index". A face can now be picked by `index`, by `name` or by a `point` on it. With a
+  point, the flat face whose plane holds the point is used, and a point on a curved face is refused with a clear
+  message.
+
 ## [0.5.0] - 2026-11-25
 
 ### Added
@@ -55,4 +63,5 @@ day, kept below for the history: they have no tag and no release.
 ### Added
 - First version: a plate carrying a QR code, raised or engraved.
 
+[0.5.1]: ../../releases/tag/v0.5.1
 [0.5.0]: ../../releases/tag/v0.5.0
