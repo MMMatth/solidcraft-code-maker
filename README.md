@@ -1,49 +1,54 @@
 # QR Code plugin for SolidCraft
 
-A [SolidCraft](https://github.com/tangency-labs/solidcraft) command plugin that adds a plate carrying a
-QR code, with the code either raised from the plate or engraved into it. The result is ordinary
-editable geometry, ready for 3D printing.
+<img src="qr-code/i/qr.svg" alt="" width="64" align="right">
+
+A [SolidCraft](https://github.com/tangency-labs/solidcraft) plugin that puts a QR code on a new plate or on a
+face of your model, raised or engraved, ready for 3D printing.
+
+## Install
+
+1. Download `qr-code-<version>.zip` from the [Releases](../../releases) page.
+2. In SolidCraft, open **Preferences > Plugins > Install plugin…**, pick the zip and accept the permissions.
+   The plugin needs no files and no network.
+3. Click **QR code** in the **Plugins** group of the Model tab.
 
 ## Use
 
-1. Download `qr-code-<version>.zip` from the [Releases](../../releases) page.
-2. In SolidCraft, open **Preferences > Plugins > Install plugin…**, pick the zip and review the
-   permissions. The plugin only asks to run `solid.box`, `solid.combine`, `solid.move` and `model.faces`; it needs no files and no network.
-3. Run **QR Code** from the **Plugins** group on the Model tab and fill in the form.
+1. Type a text or a link.
+2. Optional: click a flat face of your model. Without a face you get a new plate.
+3. Choose raised or engraved, a colour, a size, and run.
 
 | Field | Default | Meaning |
 |---|---|---|
 | Text or link | `https://example.com` | What the code says (at most 500 characters) |
-| Put it on a face (optional) | none | Click a flat face of your model; leave empty to get a new plate |
-| Style | Raised | Raised, or Engraved into the plate or model |
+| Put it on a face | none | A flat face of your model; empty gives a new plate |
+| Style | Raised | Raised from the surface, or engraved into it |
+| Colour of the code | Black | Colour of the raised modules or of the engraving; No colour keeps the colour of the part |
 | Size | 30 mm | Width of the code |
-| Height or depth | 0.6 mm | How far the code stands out, or how deep it is cut |
-| Move away from the face | 0 mm | Positive lifts the code off the face, negative sinks it into the model (needs a face) |
+| Height or depth | 0.6 mm | How far it stands out, or how deep it is cut |
+| Move X / Y / Z | 0 mm | Moves the code (the new plate, or the code on a face) |
+| Move along | World axes | With a face: the world axes, or the face's own (X right, Y up, Z out of the face), to lift or sink the code on a slanted or vertical face |
+| Rotate | 0° | Turns the code on its face, counter-clockwise (needs a face) |
 
-Everything else is chosen for you: a plate 2 mm thick with a small blank border, a level of error
-correction that survives small print flaws, and a single body for the whole result, and the code kept as a sketch plus an extrusion so you can still edit it.
+Good to know:
 
-With a face picked, the code is centred on the face's centre, upright toward world Z (toward world Y on a
-horizontal face), and it joins the picked body (Raised) or is cut into it (Engraved). A code larger than the
-face overhangs it, so pick a bigger face or reduce the size. If the size is too small for the text to print
-well (a module under 0.4 mm), the plugin says how big it needs to be.
+- The code is centred on the picked face and stays upright. A code larger than the face overhangs it.
+- A new plate is 2 mm thick with a small blank border. The whole result is one body.
+- Run it again in the same design and the new code is named `QR code 2`, `QR code 3`, and so on. A new plate with no move asked goes 5 mm to the right of what the design already holds.
+- The code is a sketch plus an extrusion, so you can edit it afterwards in the timeline. The colour is set once when the code is made: if you change the height or the sketch later, colour the new faces with the Appearance command.
+- One run is one undo step. A wrong input changes nothing.
+- A very long text is refused (about 100 characters of link): each outline of the code is one SolidCraft call, and a run may last at most 30 s.
+- Too small a size for the text (a module under 0.4 mm) is refused, and the message says the size needed.
 
-One run is one undo step, and an invalid input changes nothing.
-
-From a script or an MCP client, the entry is `qr-code.qr`, with the parameters `text`, `face`, `style` (`raised` or `engraved`), `size`, `height` and `offset`.
+From a script or an MCP client the entry is `qr-code.qr`, with `text`, `face`, `style` (`raised` or `engraved`),
+`color` (`black`, `blue`, `red`, `green`, `orange`, `yellow`, `white` or `none`), `size`, `height`, `move_x`,
+`move_y`, `move_z` and `rotation`.
 
 ## How it works
 
-The QR matrix comes from the [`qrcodegen`](https://crates.io/crates/qrcodegen) crate. The plugin traces the
-outline of every dark region, module by module, so the sketch has the exact pixel shape of the code with no
-line between two neighbouring dark modules. It draws those outlines in one sketch named "QR code", then
-extrudes it with one feature, also named "QR code". The result is two ordinary entries in the timeline, so you
-can edit the sketch, change the extrusion's height or move the sketch afterwards. On a face the sketch lies on
-a plane centred on the face (shifted by the offset along its normal); without a face it lies on top of a new
-plate.
-
-A plugin may make only 256 host calls in one run and each outline is one call, so a very long text is refused
-with a message asking for a shorter one.
+The QR matrix comes from the [`qrcodegen`](https://crates.io/crates/qrcodegen) crate. The plugin traces the outline of
+every dark region and draws them in one sketch, then extrudes the dark regions only. The colour is put on the faces
+that the code adds, never on the rest of the part.
 
 ## Build
 
@@ -53,23 +58,16 @@ You need Rust with the `wasm32-unknown-unknown` target and `wasm-tools`:
 rustup target add wasm32-unknown-unknown
 cargo install wasm-tools
 scripts/package.sh        # writes dist/qr-code-<version>.zip
-```
-
-Check and test the package with `solidcraft-cli`:
-
-```sh
 solidcraft-cli plugin check qr-code
 solidcraft-cli plugin test qr-code
 ```
 
-The layout follows SolidCraft's plugin guide: `qr-code/` is the package (manifest and component),
-`qr-code-src/` the Rust crate, and `qr-code-src/wit/plugin.wit` a copy of SolidCraft's `craft:plugin@0.2.0`
-interface.
+`qr-code/` is the package (manifest, icon, tests and the built component), `qr-code-src/` is the Rust crate.
 
 ## Releases
 
-CI builds the zip on every push and pull request. Pushing a tag such as `v0.1.0` publishes a release with
-the zip and its checksum; the tag must match the `version` in `qr-code/plugin.json` and `qr-code-src/Cargo.toml`.
+CI builds the zip on every push and pull request. Pushing a tag such as `v0.5.0` publishes a release with the zip and
+its checksum. The tag must match the `version` in `qr-code/plugin.json` and `qr-code-src/Cargo.toml`.
 
 ## Licence
 

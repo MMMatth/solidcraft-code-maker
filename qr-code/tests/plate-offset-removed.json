@@ -1,0 +1,11 @@
+{
+ "entry": "qr",
+ "params": {
+  "text": "HELLO",
+  "size": 25,
+  "offset": 1
+ },
+ "expect": {
+  "error": "invalid_input"
+ }
+}

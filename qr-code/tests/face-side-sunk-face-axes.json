@@ -1,0 +1,32 @@
+{
+ "entry": "qr",
+ "design": "block.sc",
+ "params": {
+  "text": "HI",
+  "size": 8.4,
+  "face": [
+   {
+    "type": "face",
+    "body": "Block",
+    "index": 4
+   }
+  ],
+  "move_axes": "face",
+  "move_z": -0.4,
+  "height": 0.6
+ },
+ "expect": {
+  "reply": {
+   "result": {
+    "coloured_faces": 271
+   }
+  },
+  "model": {
+   "body_count": 1,
+   "total": {
+    "volume_mm3": 12006.784
+   }
+  },
+  "tolerance": 0.001
+ }
+}

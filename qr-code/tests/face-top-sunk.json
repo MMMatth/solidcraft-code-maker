@@ -11,11 +11,20 @@
     "index": 0
    }
   ],
-  "offset": -0.4
+  "move_z": -0.4
  },
  "expect": {
+  "reply": {
+   "result": {
+    "coloured_faces": 271
+   }
+  },
   "model": {
-   "body_count": 1
-  }
+   "body_count": 1,
+   "total": {
+    "volume_mm3": 12042.4
+   }
+  },
+  "tolerance": 0.001
  }
 }

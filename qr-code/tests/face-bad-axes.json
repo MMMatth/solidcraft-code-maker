@@ -1,0 +1,19 @@
+{
+ "entry": "qr",
+ "design": "block.sc",
+ "params": {
+  "text": "HI",
+  "size": 8.4,
+  "face": [
+   {
+    "type": "face",
+    "body": "Block",
+    "index": 4
+   }
+  ],
+  "move_axes": "sideways"
+ },
+ "expect": {
+  "error": "invalid_input"
+ }
+}
