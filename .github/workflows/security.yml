@@ -15,6 +15,10 @@ jobs:
   gitleaks:
     name: Secrets (gitleaks)
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # On a pull request the action lists its commits through the API.
+      pull-requests: read
     steps:
       - uses: actions/checkout@v4
         with:
@@ -23,6 +27,8 @@ jobs:
       - uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # No comment on the pull request: a Dependabot pull request has no right to write one.
+          GITLEAKS_ENABLE_COMMENTS: "false"
           # Only needed when the repository belongs to an organisation: https://gitleaks.io
           GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
 
