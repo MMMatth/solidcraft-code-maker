@@ -1,6 +1,6 @@
 # Code Maker plugin for SolidCraft
 
-<img src="code-maker/i/qr.svg" alt="" width="64" align="right">
+<img src="code-maker/i/code.svg" alt="" width="64" align="right">
 
 A [SolidCraft](https://github.com/tangency-labs/solidcraft) plugin that puts a QR code on a new plate or on a
 face of your model, raised or engraved, ready for 3D printing.

@@ -24,7 +24,7 @@
         "effect": "edit",
         "input_schema": {
           "type": "object",
-          "x-solidcraft-icon": "i/qr.svg",
+          "x-solidcraft-icon": "i/code.svg",
           "properties": {
             "text": {
               "type": "string",
