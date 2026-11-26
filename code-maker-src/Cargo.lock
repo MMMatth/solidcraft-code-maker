@@ -72,6 +72,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "code-maker-src"
+version = "0.6.0"
+dependencies = [
+ "rxing",
+ "serde_json",
+ "wit-bindgen",
+]
+
+[[package]]
 name = "codepage-437"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -132,15 +141,6 @@ name = "equivalent"
 version = "1.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "00d174d5400e5e8fd687ad1049e2f578285fa914201b1af7e8b112a4546bd826"
-
-[[package]]
-name = "code-maker-src"
-version = "0.6.0"
-dependencies = [
- "rxing",
- "serde_json",
- "wit-bindgen",
-]
 
 [[package]]
 name = "find-msvc-tools"

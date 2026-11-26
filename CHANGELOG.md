@@ -33,6 +33,10 @@ day, kept below for the history: they have no tag and no release.
 - The "too small" message no longer talks about a shorter text for a marker, which has none.
 - **Error correction for a QR code**: Low (7%), Medium (15%, the default), Quartile (25%) or High (30%). A higher level
   reads through more damage or dirt, in a denser code.
+- **A size that suits each type**: the form starts at 30 mm for a QR code but 65 mm for an EAN-13 or 80 mm for a
+  Code 128, which are wide. A size too small to print (modules under 0.4 mm) is no longer refused, which left the
+  preview empty and said nothing: it is raised to the least that prints well, and the result says so (`warning`,
+  with `width_mm` and `module_mm`). Code 128 has its own field, `Code 128 text`.
 - **Each strict barcode has its own field** (EAN-13 number, UPC-A number, Code 39 text, ...) with its rule and a working
   example, and a mistake says what is wrong: a wrong length, a character the code does not allow, or the check digit it
   should have. Spaces and hyphens in a number are ignored.

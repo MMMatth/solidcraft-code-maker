@@ -100,13 +100,14 @@
               "title": "Text or link",
               "default": "https://example.com",
               "maxLength": 500,
-              "description": "What the code says (at most 500 characters). Code 128 takes plain ASCII text.",
+              "description": "What the code says (at most 500 characters).",
               "x-solidcraft-visible-when": {
                 "not": {
                   "field": "kind",
                   "in": [
                     "aruco",
                     "apriltag",
+                    "code128",
                     "ean13",
                     "ean8",
                     "upca",
@@ -117,6 +118,17 @@
                     "codabar"
                   ]
                 }
+              }
+            },
+            "code128_text": {
+              "type": "string",
+              "title": "Code 128 text",
+              "default": "ABC-123456",
+              "maxLength": 500,
+              "description": "Plain ASCII text: letters, digits and signs. The longer it is, the wider the barcode.",
+              "x-solidcraft-visible-when": {
+                "field": "kind",
+                "eq": "code128"
               }
             },
             "qr_correction": {
@@ -373,7 +385,115 @@
               "default": 30,
               "minimum": 5,
               "maximum": 500,
-              "unit": "mm"
+              "unit": "mm",
+              "x-solidcraft-defaults": [
+                {
+                  "when": {
+                    "field": "kind",
+                    "eq": "qr"
+                  },
+                  "value": 30
+                },
+                {
+                  "when": {
+                    "field": "kind",
+                    "eq": "datamatrix"
+                  },
+                  "value": 30
+                },
+                {
+                  "when": {
+                    "field": "kind",
+                    "eq": "aztec"
+                  },
+                  "value": 30
+                },
+                {
+                  "when": {
+                    "field": "kind",
+                    "eq": "pdf417"
+                  },
+                  "value": 90
+                },
+                {
+                  "when": {
+                    "field": "kind",
+                    "eq": "code128"
+                  },
+                  "value": 80
+                },
+                {
+                  "when": {
+                    "field": "kind",
+                    "eq": "code39"
+                  },
+                  "value": 85
+                },
+                {
+                  "when": {
+                    "field": "kind",
+                    "eq": "code93"
+                  },
+                  "value": 70
+                },
+                {
+                  "when": {
+                    "field": "kind",
+                    "eq": "itf"
+                  },
+                  "value": 80
+                },
+                {
+                  "when": {
+                    "field": "kind",
+                    "eq": "codabar"
+                  },
+                  "value": 50
+                },
+                {
+                  "when": {
+                    "field": "kind",
+                    "eq": "ean13"
+                  },
+                  "value": 65
+                },
+                {
+                  "when": {
+                    "field": "kind",
+                    "eq": "ean8"
+                  },
+                  "value": 50
+                },
+                {
+                  "when": {
+                    "field": "kind",
+                    "eq": "upca"
+                  },
+                  "value": 65
+                },
+                {
+                  "when": {
+                    "field": "kind",
+                    "eq": "upce"
+                  },
+                  "value": 45
+                },
+                {
+                  "when": {
+                    "field": "kind",
+                    "eq": "aruco"
+                  },
+                  "value": 30
+                },
+                {
+                  "when": {
+                    "field": "kind",
+                    "eq": "apriltag"
+                  },
+                  "value": 30
+                }
+              ],
+              "description": "Width of the whole code. Too small to print (modules under 0.4 mm) and it is raised to the least that prints well; the result says so."
             },
             "bar_height": {
               "type": "number",

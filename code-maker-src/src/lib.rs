@@ -3,9 +3,10 @@ wit_bindgen::generate!({ path: "wit", world: "command-plugin" });
 use craft::plugin::commands;
 use craft::plugin::types::{FieldFailure, PluginError};
 use exports::craft::plugin::entry::Guest;
+use rxing::datamatrix::encoder::SymbolShapeHint;
 use rxing::{BarcodeFormat, EncodeHints, MultiFormatWriter, Writer};
 use serde_json::{Value, json};
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashSet};
 
 mod tags;
 
@@ -51,7 +52,6 @@ impl Guest for Plugin {
 fn make(params: &Value) -> Result<String, PluginError> {
     let kind = Kind::of(params)?;
     let grid = kind.grid(params)?;
-    // Plain settings only: the error correction, the margin and the plate are fixed choices.
     let size = number(params, "size", 30.0, 5.0, 500.0)?;
     let height = number(params, "height", 0.6, 0.1, 20.0)?;
     if params.get("offset").is_some_and(|v| !v.is_null() && v.as_f64() != Some(0.0)) {
@@ -86,18 +86,22 @@ fn make(params: &Value) -> Result<String, PluginError> {
         return Err(invalid("height", format!("an engraving on a new plate must be under {PLATE} mm deep")));
     }
 
+    // The outlines are drawn one call each, and a run may make only 256 calls: refuse a code with too many before
+    // anything is made.
+    let loops = outlines(&grid);
+    if loops.len() > MAX_LOOPS {
+        return Err(invalid(&kind.text_field(), "too long to draw: use a shorter text or link"));
+    }
     let n = grid.w;
     // `size` is the code's width; the plate adds a margin of `grid.margin_x` and `grid.margin_y` modules around it.
-    let module = size / n as f64;
-    if module < MIN_MODULE {
-        return Err(invalid(
-            "size",
-            format!("too small to print well: use at least {:.0} mm{}", (MIN_MODULE * n as f64).ceil(), kind.shorter()),
-        ));
-    }
+    let mut module = size / n as f64;
+    // Too small to print: the least that prints well is used instead, and the reply says so.
+    let notice = (module < MIN_MODULE).then(|| {
+        module = MIN_MODULE;
+        format!("the size was raised from {size:.0} mm to {:.1} mm, the least this code prints well at", module * n as f64)
+    });
     // A bar code is one row of modules, drawn as bars of the height asked for; the others have square modules.
     let module_h = if grid.h == 1 { number(params, "bar_height", 15.0, 3.0, 200.0)? } else { module };
-    let plate = PLATE;
     let side = (n as f64 + 2.0 * grid.margin_x) * module;
     let side_y = grid.h as f64 * module_h + 2.0 * grid.margin_y * module;
 
@@ -130,10 +134,10 @@ fn make(params: &Value) -> Result<String, PluginError> {
             commands::run(
                 "solid.box",
                 &json!({"name": plate_name, "body_name": plate_name,
-                        "corner": mv, "length": side, "width": side_y, "height": plate})
+                        "corner": mv, "length": side, "width": side_y, "height": PLATE})
                 .to_string(),
             )?;
-            ([mv[0] + side / 2.0, mv[1] + side_y / 2.0, mv[2] + plate], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0], plate_name.clone())
+            ([mv[0] + side / 2.0, mv[1] + side_y / 2.0, mv[2] + PLATE], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0], plate_name.clone())
         }
     };
 
@@ -142,11 +146,6 @@ fn make(params: &Value) -> Result<String, PluginError> {
         "sketch.create",
         &json!({"name": label, "plane": {"origin": origin, "x_dir": x_dir, "y_dir": y_dir}}).to_string(),
     )?;
-    let loops = outlines(&grid);
-    // A plugin may make only 256 host calls in a run, and each loop is one of them.
-    if loops.len() > MAX_LOOPS {
-        return Err(invalid("text", "too long to draw: use a shorter text or link"));
-    }
     let (half, half_y) = (n as f64 * module / 2.0, grid.h as f64 * module_h / 2.0);
     // The sketch's regions alternate dark and light (a ring's hole is a region of its own), and the
     // app extrudes every region it is given. So the extrusion is told which ones are dark: one per
@@ -186,11 +185,17 @@ fn make(params: &Value) -> Result<String, PluginError> {
     // The colour is a finishing touch: when the host's face listing is not what is expected, the code
     // is kept and the reply says why it has no colour.
     let (coloured, warning) = match (&color, &faces_before) {
-        (Some(hex), Some(before)) => paint(&target, hex, before, origin, x_dir, y_dir, (half, half_y), height, engrave)?,
+        (Some(hex), Some(before)) => {
+            paint(&target, hex, before, &Frame { origin, x_dir, y_dir, half: (half, half_y) }, height, engrave)?
+        }
         (Some(_), None) => (0, Some("the faces of the part could not be read, so the code was not coloured".to_string())),
         (None, _) => (0, None),
     };
-    Ok(json!({"kind": kind.name(), "modules": n, "rows": grid.h, "side_mm": side, "side_y_mm": side_y, "outlines": loops.len(), "dark_modules": grid.dark_count(),
+    let warning = match (notice, warning) {
+        (Some(a), Some(b)) => Some(format!("{a}; {b}")),
+        (a, b) => a.or(b),
+    };
+    Ok(json!({"kind": kind.name(), "modules": n, "rows": grid.h, "module_mm": module, "width_mm": module * n as f64, "side_mm": side, "side_y_mm": side_y, "outlines": loops.len(), "dark_modules": grid.dark_count(),
               "style": if engrave { "engraved" } else { "raised" }, "coloured_faces": coloured, "warning": warning})
     .to_string())
 }
@@ -214,9 +219,17 @@ fn faces_of(body: &str) -> Result<Option<Vec<Value>>, PluginError> {
 }
 
 /// The names of a body's faces, or `None` when they cannot be read.
-fn face_names(body: &str) -> Result<Option<Vec<String>>, PluginError> {
+fn face_names(body: &str) -> Result<Option<HashSet<String>>, PluginError> {
     Ok(faces_of(body)?
         .map(|faces| faces.iter().filter_map(|f| f.get("name").and_then(Value::as_str).map(str::to_string)).collect()))
+}
+
+/// Where the code lies: the centre of its sketch, its axes, and half its width and height.
+struct Frame {
+    origin: [f64; 3],
+    x_dir: [f64; 3],
+    y_dir: [f64; 3],
+    half: (f64, f64),
 }
 
 /// Colours the faces the code made: the top and sides of the raised modules, or the floor and walls
@@ -225,18 +238,8 @@ fn face_names(body: &str) -> Result<Option<Vec<String>>, PluginError> {
 /// (or depth) of the code, or square to it within the code's height. That leaves out the part's own
 /// faces, even when the code is sunk into the part. Returns how many faces were coloured and, when
 /// there is nothing to colour, why.
-#[allow(clippy::too_many_arguments)]
-fn paint(
-    target: &str,
-    hex: &str,
-    before: &[String],
-    origin: [f64; 3],
-    x_dir: [f64; 3],
-    y_dir: [f64; 3],
-    half: (f64, f64),
-    height: f64,
-    engrave: bool,
-) -> Result<(usize, Option<String>), PluginError> {
+fn paint(target: &str, hex: &str, before: &HashSet<String>, frame: &Frame, height: f64, engrave: bool) -> Result<(usize, Option<String>), PluginError> {
+    let Frame { origin, x_dir, y_dir, half } = *frame;
     const EPS: f64 = 1e-3;
     let Some(faces) = faces_of(target)? else {
         return Ok((0, Some("the faces of the part could not be read, so the code was not coloured".to_string())));
@@ -250,16 +253,13 @@ fn paint(
         else {
             continue;
         };
-        if name.is_empty() || before.iter().any(|b| b == name) {
+        if name.is_empty() || before.contains(name) {
             continue;
         }
         let rel = [centre[0] - origin[0], centre[1] - origin[1], centre[2] - origin[2]];
         let depth = dot(rel, normal);
-        let len = norm(face_normal);
-        if len.is_nan() || len <= 1e-9 {
-            continue;
-        }
-        let along = dot(face_normal, normal) / len;
+        let Some(face_normal) = unit(face_normal) else { continue };
+        let along = dot(face_normal, normal);
         let wanted = if engrave { -height } else { height };
         let top = along.abs() > 0.999 && (depth - wanted).abs() <= EPS;
         let wall = along.abs() < 0.001
@@ -280,9 +280,9 @@ fn dot(a: [f64; 3], b: [f64; 3]) -> f64 {
     a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
 }
 
-/// The names for this run: `QR code` and, with a new plate, `QR plate` (or the `code` and `plate` of
-/// another kind), each with the first number (`QR code 2`, ...) that no feature or body of the design uses. A command that meets a name already
-/// taken fails the whole run, so the free names are looked up first. With a new plate it also returns
+/// The names for this run: the `code` and, with a new plate, the `plate` (`QR code` and `QR plate`, say), each with
+/// the first number (`QR code 2`, ...) that no feature or body of the design uses. A command that meets a name
+/// already taken fails the whole run, so the free names are looked up first. With a new plate it also returns
 /// the right-hand edge (largest X) of the bodies the design already holds, if any.
 fn free_names(code: &str, plate: &str, with_plate: bool) -> Result<(String, String, Option<f64>), PluginError> {
     // Bodies are measured only to find where a new plate can go.
@@ -348,13 +348,10 @@ fn face_frame(pick: &Value) -> Result<Face, PluginError> {
             .iter()
             .filter_map(|f| {
                 let (normal, centre) = (vec3(f.get("plane_normal"))?, vec3(f.get("centroid"))?);
-                let len = norm(normal);
-                if len.is_nan() || len <= 1e-9 {
-                    return None;
-                }
+                let normal = unit(normal)?;
                 let off = [point[0] - centre[0], point[1] - centre[1], point[2] - centre[2]];
                 // Distance from the point to the face's plane, and from the point to the face's centre.
-                (dot(off, normal) / len).abs().le(&POINT_TOLERANCE).then(|| (norm(off), f))
+                dot(off, normal).abs().le(&POINT_TOLERANCE).then(|| (norm(off), f))
             })
             .min_by(|a, b| a.0.total_cmp(&b.0))
             .map(|(_, f)| f)
@@ -362,19 +359,21 @@ fn face_frame(pick: &Value) -> Result<Face, PluginError> {
     } else {
         return Err(bad("the pick needs a face index, a face name or a point on the face"));
     };
-    let normal = vec3(face.get("plane_normal")).ok_or_else(|| bad("the face is not flat"))?;
+    let normal = vec3(face.get("plane_normal")).and_then(unit).ok_or_else(|| bad("the face is not flat"))?;
     let centre = vec3(face.get("centroid")).ok_or_else(|| bad("the face has no centre"))?;
-    let len = norm(normal);
-    if len.is_nan() || len <= 1e-9 {
-        return Err(bad("the face is not flat"));
-    }
-    Ok(Face { body: body.to_string(), normal: scale(normal, 1.0 / len), centre })
+    Ok(Face { body: body.to_string(), normal, centre })
 }
 
 fn vec3(v: Option<&Value>) -> Option<[f64; 3]> {
     let a = v?.as_array()?;
     let f = |i: usize| a.get(i).and_then(Value::as_f64).filter(|x| x.is_finite());
     Some([f(0)?, f(1)?, f(2)?])
+}
+
+/// The vector scaled to length 1, or `None` when it has no direction.
+fn unit(a: [f64; 3]) -> Option<[f64; 3]> {
+    let len = norm(a);
+    (len.is_finite() && len > 1e-9).then(|| scale(a, 1.0 / len))
 }
 
 fn norm(a: [f64; 3]) -> f64 {
@@ -399,7 +398,7 @@ fn axes(n: [f64; 3]) -> ([f64; 3], [f64; 3]) {
     (cross(up, n), up)
 }
 
-/// What the plugin draws: a QR code, an ArUco marker or an AprilTag.
+/// What the plugin draws: a QR code, an ArUco marker, an AprilTag or another code or barcode.
 #[derive(Clone, Copy)]
 enum Kind {
     Qr,
@@ -409,21 +408,20 @@ enum Kind {
     Other(&'static str),
 }
 
-/// The barcodes `rxing` writes: the id of the form, the name of the code and of its plate, and whether it is a
-/// one-row bar code (drawn as bars of a height of its own) or a 2D code.
-const BARCODES: [(&str, &str, &str, bool); 12] = [
-    ("datamatrix", "Data Matrix", "Data Matrix plate", false),
-    ("aztec", "Aztec code", "Aztec plate", false),
-    ("pdf417", "PDF417 code", "PDF417 plate", false),
-    ("code128", "Code 128", "Code 128 plate", true),
-    ("code39", "Code 39", "Code 39 plate", true),
-    ("code93", "Code 93", "Code 93 plate", true),
-    ("ean13", "EAN-13", "EAN-13 plate", true),
-    ("ean8", "EAN-8", "EAN-8 plate", true),
-    ("upca", "UPC-A", "UPC-A plate", true),
-    ("upce", "UPC-E", "UPC-E plate", true),
-    ("itf", "ITF", "ITF plate", true),
-    ("codabar", "Codabar", "Codabar plate", true),
+/// The codes `rxing` writes besides the QR code: the id of the form, and the name of the code and of its plate.
+const BARCODES: [(&str, &str, &str); 12] = [
+    ("datamatrix", "Data Matrix", "Data Matrix plate"),
+    ("aztec", "Aztec code", "Aztec plate"),
+    ("pdf417", "PDF417 code", "PDF417 plate"),
+    ("code128", "Code 128", "Code 128 plate"),
+    ("code39", "Code 39", "Code 39 plate"),
+    ("code93", "Code 93", "Code 93 plate"),
+    ("ean13", "EAN-13", "EAN-13 plate"),
+    ("ean8", "EAN-8", "EAN-8 plate"),
+    ("upca", "UPC-A", "UPC-A plate"),
+    ("upce", "UPC-E", "UPC-E plate"),
+    ("itf", "ITF", "ITF plate"),
+    ("codabar", "Codabar", "Codabar plate"),
 ];
 
 impl Kind {
@@ -452,7 +450,7 @@ impl Kind {
     }
 
     /// The row of the barcode table, for a barcode.
-    fn barcode(self) -> Option<&'static (&'static str, &'static str, &'static str, bool)> {
+    fn barcode(self) -> Option<&'static (&'static str, &'static str, &'static str)> {
         match self {
             Kind::Other(id) => BARCODES.iter().find(|b| b.0 == id),
             _ => None,
@@ -478,15 +476,16 @@ impl Kind {
         }
     }
 
-    /// What to add to a "too small" message: only a QR code can be made smaller by saying less.
-    fn shorter(self) -> &'static str {
+    /// The form field that holds what the code says, to name in an error.
+    fn text_field(self) -> String {
         match self {
-            Kind::Qr | Kind::Other(_) => " or a shorter text",
-            Kind::Aruco | Kind::April => "",
+            Kind::Aruco | Kind::April => "id".to_string(),
+            Kind::Qr => text_field("qr"),
+            Kind::Other(id) => text_field(id),
         }
     }
 
-    /// The grid of dark modules to draw, from the form's `text`, or `dictionary` and `id`.
+    /// The grid of dark modules to draw: from the text, or from the family and number of a marker.
     fn grid(self, params: &Value) -> Result<Grid, PluginError> {
         match self {
             Kind::Qr => barcode_grid("qr", params),
@@ -526,10 +525,15 @@ impl Grid {
     }
 }
 
+/// The form field of a code's text: its own (`ean13_text`) when it has strict rules, else `text`.
+fn text_field(id: &str) -> String {
+    if RULES.iter().any(|r| r.0 == id) { format!("{id}_text") } else { "text".to_string() }
+}
+
 /// The text to encode and the field it came from. A kind with rules of its own has its own field in the form
 /// (`ean13_text`), so a mistake is shown on the right one; a script may also give `text` for any kind.
 fn text_of(id: &str, params: &Value) -> Result<(String, String), PluginError> {
-    let own = format!("{id}_text");
+    let own = text_field(id);
     let given = |f: &str| params.get(f).and_then(Value::as_str).filter(|t| !t.is_empty());
     let (field, raw) = match (given(&own), given("text")) {
         (Some(t), _) => (own, t),
@@ -556,9 +560,17 @@ fn text_of(id: &str, params: &Value) -> Result<(String, String), PluginError> {
 
 type Check = fn(&str) -> Option<String>;
 
+/// Code 39 and Code 93: capital letters, digits, space and `- . $ / + %`.
+fn capitals(t: &str) -> Option<String> {
+    t.chars().find(|c| !(c.is_ascii_uppercase() || c.is_ascii_digit() || " -.$/+%".contains(*c))).map(|c| format!("`{c}` is not allowed"))
+}
+
 /// The rules of the codes that are strict: the id, the rule in a few words, what to enter, whether it is only digits
 /// (so spaces and hyphens are dropped) and the check that says what is wrong, if anything.
-const RULES: [(&str, &str, &str, bool, Check); 8] = [
+const RULES: [(&str, &str, &str, bool, Check); 9] = [
+    ("code128", "plain ASCII text, like ABC-123456", "plain ASCII text", false, |t| {
+        t.chars().find(|c| !c.is_ascii() || c.is_ascii_control()).map(|c| format!("`{c}` is not plain ASCII text"))
+    }),
     ("ean13", "12 or 13 digits, like 5901234123457", "12 or 13 digits", true, |t| digits(t, &[12, 13]).or_else(|| gs1_check(t, 13))),
     ("ean8", "7 or 8 digits, like 96385074", "7 or 8 digits", true, |t| digits(t, &[7, 8]).or_else(|| gs1_check(t, 8))),
     ("upca", "11 or 12 digits, like 036000291452", "11 or 12 digits", true, |t| digits(t, &[11, 12]).or_else(|| gs1_check(t, 12))),
@@ -568,12 +580,8 @@ const RULES: [(&str, &str, &str, bool, Check); 8] = [
     ("itf", "an even number of digits, like 123456789012", "an even number of digits", true, |t| {
         digits(t, &[]).or_else(|| (t.len() % 2 != 0).then(|| format!("{} digits is odd: add a 0 in front", t.len())))
     }),
-    ("code39", "capital letters, digits, space and - . $ / + %, like ABC-1234", "capital letters and digits", false, |t| {
-        t.chars().find(|c| !(c.is_ascii_uppercase() || c.is_ascii_digit() || " -.$/+%".contains(*c))).map(|c| format!("`{c}` is not allowed"))
-    }),
-    ("code93", "capital letters, digits, space and - . $ / + %, like ABC1234", "capital letters and digits", false, |t| {
-        t.chars().find(|c| !(c.is_ascii_uppercase() || c.is_ascii_digit() || " -.$/+%".contains(*c))).map(|c| format!("`{c}` is not allowed"))
-    }),
+    ("code39", "capital letters, digits, space and - . $ / + %, like ABC-1234", "capital letters and digits", false, capitals),
+    ("code93", "capital letters, digits, space and - . $ / + %, like ABC1234", "capital letters and digits", false, capitals),
     ("codabar", "digits and - $ : / . + between a start and a stop letter A to D, like A12345B", "digits between a start and a stop letter A to D", false, |t| {
         let ends = |c: Option<char>| c.is_some_and(|c| matches!(c, 'A'..='D'));
         if !(ends(t.chars().next()) && ends(t.chars().last()) && t.len() >= 3) {
@@ -637,12 +645,13 @@ fn barcode_grid(id: &str, params: &Value) -> Result<Grid, PluginError> {
         "codabar" => BarcodeFormat::CODABAR,
         other => return Err(invalid("kind", format!("no barcode `{other}`"))),
     };
-    // Width and height 0: the smallest picture, one pixel per module.
-    // A QR code is written with the error correction asked for (medium by default) and no margin of its own; the others as they come.
-    let hints = if id == "qr" {
-        EncodeHints { ErrorCorrection: Some(correction(params)?.into()), Margin: Some("0".into()), ..Default::default() }
-    } else {
-        EncodeHints::default()
+    // A QR code is written with the error correction asked for (medium by default) and no margin of its own; the
+    // others as they come. Width and height 0 ask for the smallest picture, one pixel per module.
+    let hints = match id {
+        "qr" => EncodeHints { ErrorCorrection: Some(correction(params)?.into()), Margin: Some("0".into()), ..Default::default() },
+        // A square Data Matrix: `rxing` may pick a rectangular one, which is valid but rarer and harder to read.
+        "datamatrix" => EncodeHints { DataMatrixShape: Some(SymbolShapeHint::FORCE_SQUARE), ..Default::default() },
+        _ => EncodeHints::default(),
     };
     let matrix = MultiFormatWriter
         .encode_with_hints(&text, &format, 0, 0, &hints)
@@ -688,7 +697,7 @@ fn aruco_grid(params: &Value) -> Result<Grid, PluginError> {
     let name = dictionary(params, "aruco", "4x4_50");
     let dict = tags::ARUCO.iter().find(|d| d.name == name).ok_or_else(|| {
         let all: Vec<&str> = tags::ARUCO.iter().map(|d| d.name).collect();
-        invalid("dictionary", format!("`{name}` is not an ArUco dictionary: use one of {}", all.join(", ")))
+        invalid("aruco_dictionary", format!("`{name}` is not an ArUco dictionary: use one of {}", all.join(", ")))
     })?;
     let id = marker_id(params, dict.count)?;
     let bits = dict.size * dict.size;
@@ -721,7 +730,7 @@ fn april_grid(params: &Value) -> Result<Grid, PluginError> {
     let name = dictionary(params, "apriltag", "36h11");
     let fam = tags::APRIL.iter().find(|f| f.name == name).ok_or_else(|| {
         let all: Vec<&str> = tags::APRIL.iter().map(|f| f.name).collect();
-        invalid("dictionary", format!("`{name}` is not an AprilTag family: use one of {}", all.join(", ")))
+        invalid("apriltag_dictionary", format!("`{name}` is not an AprilTag family: use one of {}", all.join(", ")))
     })?;
     let id = marker_id(params, fam.codes.len())?;
     let code = fam.codes.get(id).copied().ok_or_else(|| invalid("id", "the family data is too short"))?;
@@ -820,7 +829,8 @@ fn outlines(grid: &Grid) -> Vec<(Vec<Pt>, bool)> {
             }
         }
         let points = straighten(points);
-        loops.push((points.clone(), is_outer(&points)));
+        let outer = is_outer(&points);
+        loops.push((points, outer));
     }
     loops
 }
@@ -918,7 +928,7 @@ mod tests {
     #[ignore]
     fn dump_barcodes() {
         let samples = [
-            ("qr", "https://example.com"), ("qr", "https://lintrouvable.fr"), ("qr", "HELLO"), ("qr", "HI"), ("qr", "Bonjour le monde, ceci est un texte un peu plus long pour changer de version du code QR 1234567890"), ("datamatrix", "HELLO-123"), ("datamatrix", "https://lintrouvable.fr"), ("aztec", "HELLO-123"), ("pdf417", "HELLO-123"),
+            ("qr", "https://example.com"), ("qr", "https://lintrouvable.fr"), ("qr", "HELLO"), ("qr", "HI"), ("qr", "Bonjour le monde, ceci est un texte un peu plus long pour changer de version du code QR 1234567890"), ("datamatrix", "HELLO-123"), ("datamatrix", "Code Maker"), ("datamatrix", "https://lintrouvable.fr"), ("aztec", "HELLO-123"), ("pdf417", "HELLO-123"),
             ("code128", "ABC-123456"), ("code39", "ABC-1234"), ("code93", "ABC1234"), ("ean13", "5901234123457"),
             ("ean8", "96385074"), ("upca", "036000291452"), ("upce", "01234565"), ("itf", "123456789012"), ("codabar", "A12345B"),
         ];

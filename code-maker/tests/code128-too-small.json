@@ -2,10 +2,18 @@
  "entry": "code",
  "params": {
   "kind": "code128",
-  "text": "ABC-123456",
+  "code128_text": "ABC-123456",
   "size": 30
  },
  "expect": {
-  "error": "invalid_input"
+  "reply": {
+   "result": {
+    "kind": "code128",
+    "modules": 133,
+    "module_mm": 0.4,
+    "width_mm": 53.2
+   }
+  },
+  "tolerance": 0.001
  }
 }

@@ -8,9 +8,10 @@ A [SolidCraft](https://github.com/tangency-labs/solidcraft) plugin that puts a Q
 [AprilTag](https://github.com/AprilRobotics/apriltag) (the fiducial markers cameras and robots track) on a new plate or on a
 face of your model, raised or engraved, ready for 3D printing.
 
-<p align="center"><img src="docs/demo.gif" alt="A QR code raised on a plate, coloured, engraved, put on a face and repeated" width="480"></p>
+<p align="center"><img src="docs/demo.gif" alt="A QR code, an EAN-13 and a Code 128 barcode, a Data Matrix, an Aztec code, an AprilTag, an ArUco marker and an engraved QR code, each on its plate" width="560"></p>
 
-The demo shows real results of the plugin in SolidCraft.
+The demo shows real results of the plugin in SolidCraft: one plate for each type of code, made by the plugin itself and
+photographed with `solidcraft-cli snapshot`.
 
 ## Install
 
@@ -35,7 +36,7 @@ The demo shows real results of the plugin in SolidCraft.
 | Put it on a face | none | A flat face of your model; empty gives a new plate |
 | Style | Raised | Raised from the surface, or engraved into it |
 | Colour of the code | Black | Colour of the raised modules or of the engraving; No colour keeps the colour of the part |
-| Size | 30 mm | Width of the code (the whole barcode, for a barcode) |
+| Size | 30 mm for a QR code, more for a barcode | Width of the code (the whole barcode, for a barcode). The form starts at a size that suits the type (65 mm for an EAN-13, 80 mm for a Code 128, ...). Smaller than the code can print (modules under 0.4 mm) and it is raised to the least that works; the result says so |
 | Bar height | 15 mm | Barcodes only: how tall the bars are |
 | Height or depth | 0.6 mm | How far it stands out, or how deep it is cut |
 | Move X / Y / Z | 0 mm | Moves the code (the new plate, or the code on a face) |
@@ -50,7 +51,7 @@ shown on that field and says what is wrong, for example `the check digit should 
 | Type | Field | What it takes |
 |---|---|---|
 | QR code, Data Matrix, Aztec, PDF417 | Text or link | any text, at most 500 characters |
-| Code 128 | Text or link | plain ASCII text |
+| Code 128 | Code 128 text | plain ASCII text (`ABC-123456`); the longer it is, the wider the barcode |
 | EAN-13 | EAN-13 number | 12 or 13 digits (`5901234123457`). With 12 the check digit is added; with 13 the last one must be right |
 | EAN-8 | EAN-8 number | 7 or 8 digits (`96385074`), same rule |
 | UPC-A | UPC-A number | 11 or 12 digits (`036000291452`), same rule |
@@ -59,8 +60,8 @@ shown on that field and says what is wrong, for example `the check digit should 
 | Code 39, Code 93 | Code 39 / 93 text | capital letters, digits, space and `- . $ / + %` (`ABC-1234`) |
 | Codabar | Codabar text | digits and `- $ : / . +` between a start and a stop letter A to D (`A12345B`) |
 
-Spaces and hyphens in a number are ignored (`5 901234 123457` works). A barcode is wide, so its **Size** is its width: it
-needs more than 30 mm (a module under 0.4 mm is refused, and the message says the size needed). Barcodes read best as
+Spaces and hyphens in a number are ignored (`5 901234 123457` works). A barcode is wide, so its **Size** is its width: a barcode needs
+more than 30 mm, and the form starts at a size that suits each type. If you go lower, the size is raised to the least that prints well (modules of 0.4 mm) and the result says so, instead of refusing. Barcodes read best as
 dark bars on a light plate. `scripts/verify-barcodes.py` reads every barcode back with the ZXing reader.
 
 ### ArUco markers and AprilTags

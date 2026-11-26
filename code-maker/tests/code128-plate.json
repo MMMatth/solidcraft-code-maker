@@ -2,9 +2,9 @@
  "entry": "code",
  "params": {
   "kind": "code128",
-  "text": "ABC-123456",
   "size": 70,
-  "bar_height": 12
+  "bar_height": 12,
+  "code128_text": "ABC-123456"
  },
  "expect": {
   "reply": {
