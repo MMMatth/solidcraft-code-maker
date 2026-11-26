@@ -8,6 +8,7 @@ crate=$(sed -n 's/^version = "\(.*\)"/\1/p' code-maker-src/Cargo.toml | head -n1
 [ -n "$version" ] || { echo "no version in plugin.json" >&2; exit 1; }
 [ "$version" = "$crate" ] || { echo "plugin.json ($version) and Cargo.toml ($crate) versions differ" >&2; exit 1; }
 
+rm -f code-maker/*.wasm  # no stale component from an earlier build or name
 cargo build --release --locked --manifest-path code-maker-src/Cargo.toml --target wasm32-unknown-unknown
 wasm-tools component new code-maker-src/target/wasm32-unknown-unknown/release/code_maker_src.wasm -o code-maker/code-maker.wasm
 wasm-tools validate --features component-model code-maker/code-maker.wasm
