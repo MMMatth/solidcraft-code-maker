@@ -1,0 +1,11 @@
+{
+ "entry": "code",
+ "params": {
+  "kind": "codabar",
+  "codabar_text": "12345",
+  "size": 60
+ },
+ "expect": {
+  "error": "invalid_input"
+ }
+}

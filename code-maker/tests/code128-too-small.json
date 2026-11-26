@@ -1,0 +1,11 @@
+{
+ "entry": "code",
+ "params": {
+  "kind": "code128",
+  "text": "ABC-123456",
+  "size": 30
+ },
+ "expect": {
+  "error": "invalid_input"
+ }
+}

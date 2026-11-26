@@ -1,0 +1,19 @@
+{
+ "entry": "code",
+ "params": {
+  "kind": "pdf417",
+  "text": "HELLO-123",
+  "size": 80
+ },
+ "expect": {
+  "reply": {
+   "result": {
+    "kind": "pdf417",
+    "modules": 163,
+    "rows": 88,
+    "dark_modules": 1620
+   }
+  },
+  "tolerance": 0.001
+ }
+}

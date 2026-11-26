@@ -1,0 +1,26 @@
+{
+ "entry": "code",
+ "params": {
+  "kind": "code128",
+  "text": "ABC-123456",
+  "size": 70,
+  "bar_height": 12
+ },
+ "expect": {
+  "reply": {
+   "result": {
+    "kind": "code128",
+    "modules": 133,
+    "rows": 1,
+    "dark_modules": 58
+   }
+  },
+  "tolerance": 0.001,
+  "model": {
+   "body_count": 1,
+   "total": {
+    "volume_mm3": 2224.222
+   }
+  }
+ }
+}

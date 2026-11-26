@@ -1,0 +1,25 @@
+{
+ "entry": "code",
+ "params": {
+  "kind": "aruco",
+  "id": 7,
+  "size": 30,
+  "aruco_dictionary": "4x4_50"
+ },
+ "expect": {
+  "reply": {
+   "result": {
+    "kind": "aruco",
+    "modules": 6,
+    "dark_modules": 28
+   }
+  },
+  "model": {
+   "body_count": 1,
+   "total": {
+    "volume_mm3": 3620
+   }
+  },
+  "tolerance": 0.001
+ }
+}

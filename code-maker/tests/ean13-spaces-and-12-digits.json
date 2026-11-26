@@ -1,0 +1,19 @@
+{
+ "entry": "code",
+ "params": {
+  "kind": "ean13",
+  "ean13_text": "5 901234-12345",
+  "size": 60
+ },
+ "expect": {
+  "reply": {
+   "result": {
+    "kind": "ean13",
+    "modules": 104,
+    "rows": 1,
+    "dark_modules": 49
+   }
+  },
+  "tolerance": 0.001
+ }
+}

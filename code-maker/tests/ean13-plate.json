@@ -1,0 +1,26 @@
+{
+ "entry": "code",
+ "params": {
+  "kind": "ean13",
+  "size": 52,
+  "bar_height": 10,
+  "ean13_text": "5901234123457"
+ },
+ "expect": {
+  "reply": {
+   "result": {
+    "kind": "ean13",
+    "modules": 104,
+    "rows": 1,
+    "dark_modules": 49
+   }
+  },
+  "tolerance": 0.001,
+  "model": {
+   "body_count": 1,
+   "total": {
+    "volume_mm3": 1419.0
+   }
+  }
+ }
+}

@@ -1,8 +1,8 @@
 {
   "id": "code-maker",
   "name": "Code Maker",
-  "version": "0.5.1",
-  "description": "Puts a QR code on a plate or on a face of your model.",
+  "version": "0.6.0",
+  "description": "Puts a QR code, a barcode, an ArUco marker or an AprilTag on a plate or on a face of your model.",
   "capabilities": [
     "commands@0.2"
   ],
@@ -24,13 +24,281 @@
         "effect": "edit",
         "input_schema": {
           "type": "object",
+          "x-solidcraft-field-order": "declared",
           "x-solidcraft-icon": "i/code.svg",
           "properties": {
+            "kind": {
+              "type": "string",
+              "title": "Type of code",
+              "default": "qr",
+              "description": "A QR code or another 2D code, a barcode, or an ArUco marker or AprilTag (the markers cameras and robots track).",
+              "oneOf": [
+                {
+                  "const": "qr",
+                  "title": "QR code"
+                },
+                {
+                  "const": "ean13",
+                  "title": "Barcode: EAN-13"
+                },
+                {
+                  "const": "code128",
+                  "title": "Barcode: Code 128"
+                },
+                {
+                  "const": "upca",
+                  "title": "Barcode: UPC-A"
+                },
+                {
+                  "const": "datamatrix",
+                  "title": "Data Matrix"
+                },
+                {
+                  "const": "code39",
+                  "title": "Barcode: Code 39"
+                },
+                {
+                  "const": "pdf417",
+                  "title": "PDF417"
+                },
+                {
+                  "const": "aztec",
+                  "title": "Aztec code"
+                },
+                {
+                  "const": "itf",
+                  "title": "Barcode: ITF"
+                },
+                {
+                  "const": "ean8",
+                  "title": "Barcode: EAN-8"
+                },
+                {
+                  "const": "upce",
+                  "title": "Barcode: UPC-E"
+                },
+                {
+                  "const": "codabar",
+                  "title": "Barcode: Codabar"
+                },
+                {
+                  "const": "code93",
+                  "title": "Barcode: Code 93"
+                },
+                {
+                  "const": "aruco",
+                  "title": "ArUco marker"
+                },
+                {
+                  "const": "apriltag",
+                  "title": "AprilTag"
+                }
+              ]
+            },
             "text": {
               "type": "string",
               "title": "Text or link",
               "default": "https://example.com",
-              "maxLength": 500
+              "maxLength": 500,
+              "description": "What the code says (at most 500 characters). Code 128 takes plain ASCII text.",
+              "x-solidcraft-visible-when": {
+                "not": {
+                  "field": "kind",
+                  "in": [
+                    "aruco",
+                    "apriltag",
+                    "ean13",
+                    "ean8",
+                    "upca",
+                    "upce",
+                    "itf",
+                    "code39",
+                    "code93",
+                    "codabar"
+                  ]
+                }
+              }
+            },
+            "qr_correction": {
+              "type": "string",
+              "title": "Error correction",
+              "default": "medium",
+              "description": "QR code only. More correction reads through more damage or dirt, in a denser code (smaller modules for the same size).",
+              "x-solidcraft-visible-when": {
+                "field": "kind",
+                "eq": "qr"
+              },
+              "oneOf": [
+                {
+                  "const": "low",
+                  "title": "Low (7%)"
+                },
+                {
+                  "const": "medium",
+                  "title": "Medium (15%)"
+                },
+                {
+                  "const": "quartile",
+                  "title": "Quartile (25%)"
+                },
+                {
+                  "const": "high",
+                  "title": "High (30%)"
+                }
+              ]
+            },
+            "ean13_text": {
+              "type": "string",
+              "title": "EAN-13 number",
+              "default": "5901234123457",
+              "maxLength": 500,
+              "description": "12 or 13 digits. With 12, the check digit is added; with 13, the last one must be right. Spaces and hyphens are fine.",
+              "x-solidcraft-visible-when": {
+                "field": "kind",
+                "eq": "ean13"
+              }
+            },
+            "ean8_text": {
+              "type": "string",
+              "title": "EAN-8 number",
+              "default": "96385074",
+              "maxLength": 500,
+              "description": "7 or 8 digits. With 7, the check digit is added; with 8, the last one must be right.",
+              "x-solidcraft-visible-when": {
+                "field": "kind",
+                "eq": "ean8"
+              }
+            },
+            "upca_text": {
+              "type": "string",
+              "title": "UPC-A number",
+              "default": "036000291452",
+              "maxLength": 500,
+              "description": "11 or 12 digits. With 11, the check digit is added; with 12, the last one must be right.",
+              "x-solidcraft-visible-when": {
+                "field": "kind",
+                "eq": "upca"
+              }
+            },
+            "upce_text": {
+              "type": "string",
+              "title": "UPC-E number",
+              "default": "01234565",
+              "maxLength": 500,
+              "description": "7 or 8 digits, starting with 0 or 1.",
+              "x-solidcraft-visible-when": {
+                "field": "kind",
+                "eq": "upce"
+              }
+            },
+            "itf_text": {
+              "type": "string",
+              "title": "ITF number",
+              "default": "123456789012",
+              "maxLength": 500,
+              "description": "Digits only, an even number of them (add a 0 in front if odd).",
+              "x-solidcraft-visible-when": {
+                "field": "kind",
+                "eq": "itf"
+              }
+            },
+            "code39_text": {
+              "type": "string",
+              "title": "Code 39 text",
+              "default": "ABC-1234",
+              "maxLength": 500,
+              "description": "Capital letters A to Z, digits, space and - . $ / + %",
+              "x-solidcraft-visible-when": {
+                "field": "kind",
+                "eq": "code39"
+              }
+            },
+            "code93_text": {
+              "type": "string",
+              "title": "Code 93 text",
+              "default": "ABC1234",
+              "maxLength": 500,
+              "description": "Capital letters A to Z, digits, space and - . $ / + %",
+              "x-solidcraft-visible-when": {
+                "field": "kind",
+                "eq": "code93"
+              }
+            },
+            "codabar_text": {
+              "type": "string",
+              "title": "Codabar text",
+              "default": "A12345B",
+              "maxLength": 500,
+              "description": "Digits and - $ : / . + between a start and a stop letter A to D.",
+              "x-solidcraft-visible-when": {
+                "field": "kind",
+                "eq": "codabar"
+              }
+            },
+            "aruco_dictionary": {
+              "type": "string",
+              "title": "Family",
+              "default": "4x4_50",
+              "x-solidcraft-visible-when": {
+                "field": "kind",
+                "eq": "aruco"
+              },
+              "oneOf": [
+                {
+                  "const": "4x4_50",
+                  "title": "ArUco 4x4"
+                },
+                {
+                  "const": "5x5_100",
+                  "title": "ArUco 5x5"
+                },
+                {
+                  "const": "6x6_250",
+                  "title": "ArUco 6x6"
+                },
+                {
+                  "const": "original",
+                  "title": "ArUco original"
+                }
+              ]
+            },
+            "apriltag_dictionary": {
+              "type": "string",
+              "title": "Family",
+              "default": "36h11",
+              "x-solidcraft-visible-when": {
+                "field": "kind",
+                "eq": "apriltag"
+              },
+              "oneOf": [
+                {
+                  "const": "36h11",
+                  "title": "AprilTag 36h11 (the usual one)"
+                },
+                {
+                  "const": "16h5",
+                  "title": "AprilTag 16h5"
+                },
+                {
+                  "const": "standard_41h12",
+                  "title": "AprilTag Standard 41h12"
+                }
+              ]
+            },
+            "id": {
+              "type": "integer",
+              "title": "Marker number",
+              "default": 0,
+              "minimum": 0,
+              "maximum": 1023,
+              "description": "Only for an ArUco marker or an AprilTag: its number in the dictionary (0 is fine).",
+              "x-solidcraft-visible-when": {
+                "field": "kind",
+                "in": [
+                  "aruco",
+                  "apriltag"
+                ]
+              }
             },
             "face": {
               "type": "array",
@@ -106,6 +374,29 @@
               "minimum": 5,
               "maximum": 500,
               "unit": "mm"
+            },
+            "bar_height": {
+              "type": "number",
+              "title": "Bar height",
+              "default": 15,
+              "minimum": 3,
+              "maximum": 200,
+              "unit": "mm",
+              "description": "Only for a barcode: how tall the bars are. Size is the width of the whole barcode.",
+              "x-solidcraft-visible-when": {
+                "field": "kind",
+                "in": [
+                  "code128",
+                  "ean13",
+                  "upca",
+                  "ean8",
+                  "upce",
+                  "code39",
+                  "code93",
+                  "itf",
+                  "codabar"
+                ]
+              }
             },
             "height": {
               "type": "number",

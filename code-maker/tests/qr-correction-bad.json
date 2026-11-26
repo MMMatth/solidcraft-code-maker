@@ -1,0 +1,11 @@
+{
+ "entry": "code",
+ "params": {
+  "kind": "qr",
+  "text": "https://example.com",
+  "qr_correction": "maximum"
+ },
+ "expect": {
+  "error": "invalid_input"
+ }
+}
