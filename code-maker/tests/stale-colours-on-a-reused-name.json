@@ -1,0 +1,25 @@
+{
+ "entry": "code",
+ "design": "stale-colours.sc",
+ "params": {
+  "kind": "qr",
+  "text": "https://lintrouvable.fr",
+  "size": 300
+ },
+ "expect": {
+  "reply": {
+   "result": {
+    "dark_modules": 342,
+    "coloured_faces": 379,
+    "cleared_faces": 137
+   }
+  },
+  "model": {
+   "body_count": 1,
+   "total": {
+    "volume_mm3": 271756.8
+   }
+  },
+  "tolerance": 0.001
+ }
+}

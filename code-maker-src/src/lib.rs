@@ -182,6 +182,9 @@ fn make(params: &Value) -> Result<String, PluginError> {
         })
         .to_string(),
     )?;
+    // A new plate may carry colours left by an earlier plate of the same name that was deleted or undone: SolidCraft
+    // keeps colours by body name, and they land on the new faces. A plate this run made starts with none.
+    let cleared = if face.is_none() { clear_stale_colours(&target) } else { 0 };
     // The colour is a finishing touch: when the host's face listing is not what is expected, the code
     // is kept and the reply says why it has no colour.
     let (coloured, warning) = match (&color, &faces_before) {
@@ -196,7 +199,7 @@ fn make(params: &Value) -> Result<String, PluginError> {
         (a, b) => a.or(b),
     };
     Ok(json!({"kind": kind.name(), "modules": n, "rows": grid.h, "module_mm": module, "width_mm": module * n as f64, "side_mm": side, "side_y_mm": side_y, "outlines": loops.len(), "dark_modules": grid.dark_count(),
-              "style": if engrave { "engraved" } else { "raised" }, "coloured_faces": coloured, "warning": warning})
+              "style": if engrave { "engraved" } else { "raised" }, "coloured_faces": coloured, "cleared_faces": cleared, "warning": warning})
     .to_string())
 }
 
@@ -210,6 +213,34 @@ fn look(params: &Value) -> Result<Option<String>, PluginError> {
             .map(|(_, hex)| Some((*hex).to_string()))
             .ok_or_else(|| invalid("color", format!("`{name}` is not a colour of the list"))),
     }
+}
+
+/// Takes the colour off every face of a body this run just made, which only an old plate of the same name can have
+/// left there. Returns how many faces were cleared. It is best effort: when the host does not answer as expected the
+/// code is kept and nothing is cleared.
+fn clear_stale_colours(body: &str) -> usize {
+    let listed = commands::run("appearance.list", &json!({"body": body}).to_string()).ok();
+    let reply: Option<Value> = listed.and_then(|r| serde_json::from_str(&r).ok());
+    let coloured: Vec<u64> = reply
+        .as_ref()
+        .and_then(|r| r.get("body").unwrap_or(r).get("faces").and_then(Value::as_array))
+        .map(|faces| faces.iter().filter_map(|f| f.get("face").and_then(Value::as_u64)).collect())
+        .unwrap_or_default();
+    if coloured.is_empty() {
+        return 0;
+    }
+    let Ok(Some(faces)) = faces_of(body) else { return 0 };
+    let spots: Vec<Value> = faces
+        .iter()
+        .filter(|f| f.get("index").and_then(Value::as_u64).is_some_and(|i| coloured.contains(&i)))
+        .filter_map(|f| vec3(f.get("point")))
+        .map(|point| json!({"point": point, "body": body}))
+        .collect();
+    // Faces with no colour asked for go back to the look of their body.
+    if spots.is_empty() || commands::run("appearance.assign", &json!({"faces": spots}).to_string()).is_err() {
+        return 0;
+    }
+    spots.len()
 }
 
 /// The faces of a body as the host lists them, or `None` when the reply is not the expected shape.

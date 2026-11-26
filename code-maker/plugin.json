@@ -16,6 +16,7 @@
       "solid.extrude",
       "model.faces",
       "appearance.assign",
+      "appearance.list",
       "document.inspect"
     ],
     "entries": [
