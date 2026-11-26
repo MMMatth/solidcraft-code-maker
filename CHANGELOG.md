@@ -54,6 +54,10 @@ day, kept below for the history: they have no tag and no release.
 ## [0.5.1] - 2026-11-25
 
 ### Fixed
+- **Fixed: the run failed with `no face at [...]` after the code was already drawn.** The host refuses a whole
+  colour call when one point of it falls off a face, which happens on thin faces once the point is rounded. The
+  plugin now cuts a refused batch in halves until the faces it cannot find are alone, colours the rest, and says in
+  the reply how many it left uncoloured instead of failing.
 - A face given by a point on it, which is how an MCP client or a script usually picks one, was refused with
   "the pick has no face index". A face can now be picked by `index`, by `name` or by a `point` on it. With a
   point, the flat face whose plane holds the point is used, and a point on a curved face is refused with a clear

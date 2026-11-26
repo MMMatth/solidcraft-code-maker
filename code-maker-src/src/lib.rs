@@ -227,10 +227,38 @@ fn look(params: &Value) -> Result<Option<String>, PluginError> {
 fn reset_colours(body: &str, faces: &[Value]) -> usize {
     let spots: Vec<Value> =
         faces.iter().filter_map(|f| vec3(f.get("point"))).map(|point| json!({"point": point, "body": body})).collect();
-    if spots.is_empty() || commands::run("appearance.assign", &json!({"faces": spots}).to_string()).is_err() {
-        return 0;
+    assign(&spots, None)
+}
+
+/// Calls the host may still be asked for while colouring, out of the 256 a run may make (the outlines take most).
+const ASSIGN_BUDGET: usize = 30;
+
+/// Gives the faces a colour (or takes it off, with `None`), as many as the host accepts. The host refuses a whole
+/// call when one point of it is on no face (a point it listed itself can fall off a thin face once rounded), so a
+/// refused batch is cut in halves until the faces it cannot find are alone, and those are left as they are.
+/// Returns how many faces were done.
+fn assign(spots: &[Value], hex: Option<&str>) -> usize {
+    let mut budget = ASSIGN_BUDGET;
+    let mut done = 0;
+    let mut queue = vec![spots];
+    while let Some(group) = queue.pop() {
+        if group.is_empty() || budget == 0 {
+            continue;
+        }
+        budget -= 1;
+        let mut args = json!({"faces": group});
+        if let Some(hex) = hex {
+            args["color"] = json!(hex);
+        }
+        if commands::run("appearance.assign", &args.to_string()).is_ok() {
+            done += group.len();
+        } else if group.len() > 1 {
+            let (a, b) = group.split_at(group.len() / 2);
+            queue.push(b);
+            queue.push(a);
+        }
     }
-    spots.len()
+    done
 }
 
 /// The faces of a body as the host lists them, or `None` when the reply is not the expected shape.
@@ -297,9 +325,12 @@ fn paint(
     if spots.is_empty() {
         return Ok((0, Some("no face of the code was found to colour".to_string())));
     }
-    let count = spots.len();
-    commands::run("appearance.assign", &json!({"faces": spots, "color": hex}).to_string())?;
-    Ok((count, None))
+    let count = assign(&spots, Some(hex));
+    if count == 0 {
+        return Ok((0, Some("the host found none of the code's faces to colour".to_string())));
+    }
+    let missed = spots.len() - count;
+    Ok((count, (missed > 0).then(|| format!("{missed} face(s) of the code could not be coloured"))))
 }
 
 fn dot(a: [f64; 3], b: [f64; 3]) -> f64 {
