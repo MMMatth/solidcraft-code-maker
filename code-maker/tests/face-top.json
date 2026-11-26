@@ -1,0 +1,29 @@
+{
+ "entry": "code",
+ "design": "block.sc",
+ "params": {
+  "text": "HI",
+  "size": 21,
+  "face": [
+   {
+    "type": "face",
+    "body": "Block",
+    "index": 0
+   }
+  ]
+ },
+ "expect": {
+  "reply": {
+   "result": {
+    "coloured_faces": 271
+   }
+  },
+  "model": {
+   "body_count": 1,
+   "total": {
+    "volume_mm3": 12127.2
+   }
+  },
+  "tolerance": 0.001
+ }
+}

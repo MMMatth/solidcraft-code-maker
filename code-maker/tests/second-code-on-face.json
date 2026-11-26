@@ -1,0 +1,29 @@
+{
+ "entry": "code",
+ "design": "one-code.sc",
+ "params": {
+  "text": "SECOND",
+  "size": 21,
+  "face": [
+   {
+    "type": "face",
+    "body": "QR plate",
+    "index": 0
+   }
+  ]
+ },
+ "expect": {
+  "reply": {
+   "result": {
+    "coloured_faces": 274
+   }
+  },
+  "model": {
+   "body_count": 1,
+   "total": {
+    "volume_mm3": 2095.41678
+   }
+  },
+  "tolerance": 0.001
+ }
+}

@@ -1,6 +1,6 @@
-# QR Code plugin for SolidCraft
+# Code Maker plugin for SolidCraft
 
-<img src="qr-code/i/qr.svg" alt="" width="64" align="right">
+<img src="code-maker/i/qr.svg" alt="" width="64" align="right">
 
 A [SolidCraft](https://github.com/tangency-labs/solidcraft) plugin that puts a QR code on a new plate or on a
 face of your model, raised or engraved, ready for 3D printing.
@@ -11,10 +11,10 @@ The demo shows real results of the plugin in SolidCraft.
 
 ## Install
 
-1. Download `qr-code-<version>.zip` from the [Releases](../../releases) page.
+1. Download `code-maker-<version>.zip` from the [Releases](../../releases) page.
 2. In SolidCraft, open **Preferences > Plugins > Install plugin…**, pick the zip and accept the permissions.
    The plugin needs no files and no network.
-3. Click **QR code** in the **Plugins** group of the Model tab.
+3. Click **Code** in the **Plugins** group of the Model tab.
 
 ## Use
 
@@ -45,7 +45,7 @@ Good to know:
 - A very long text is refused (about 100 characters of link): each outline of the code is one SolidCraft call, and a run may last at most 30 s.
 - Too small a size for the text (a module under 0.4 mm) is refused, and the message says the size needed.
 
-From a script or an MCP client the entry is `qr-code.qr`. SolidCraft's MCP server exposes it as the tool `qr-code_qr`: call that tool directly (a generic `execute` of `qr-code.qr` asks for a plugin approval token first), with `text`, `face` (a pick of a body's face by `index`, `name` or a `point` on it), `style` (`raised` or `engraved`),
+From a script or an MCP client the entry is `code-maker.code`. SolidCraft's MCP server exposes it as the tool `code-maker_code`: call that tool directly (a generic `execute` of `code-maker.code` asks for a plugin approval token first), with `text`, `face` (a pick of a body's face by `index`, `name` or a `point` on it), `style` (`raised` or `engraved`),
 `color` (`black`, `blue`, `red`, `green`, `orange`, `yellow`, `white` or `none`), `size`, `height`, `move_x`,
 `move_y`, `move_z`, `move_axes` (`world` or `face`) and `rotation`.
 
@@ -62,19 +62,19 @@ You need Rust with the `wasm32-unknown-unknown` target and `wasm-tools`:
 ```sh
 rustup target add wasm32-unknown-unknown
 cargo install wasm-tools
-scripts/package.sh        # writes dist/qr-code-<version>.zip
-solidcraft-cli plugin check qr-code
-solidcraft-cli plugin test qr-code
+scripts/package.sh        # writes dist/code-maker-<version>.zip
+solidcraft-cli plugin check code-maker
+solidcraft-cli plugin test code-maker
 ```
 
-`qr-code/` is the package (manifest, icon, tests and the built component), `qr-code-src/` is the Rust crate.
+`code-maker/` is the package (manifest, icon, tests and the built component), `code-maker-src/` is the Rust crate.
 
 ## Releases
 
 The changes of each version are in the [changelog](CHANGELOG.md); the release notes are taken from it.
 
 CI builds the zip on every push and pull request. A separate security workflow runs gitleaks (secrets), `cargo audit` and a dependency review (vulnerable dependencies) and actionlint (workflow files) on pushes, pull requests and every Monday, and Dependabot proposes weekly updates. Pushing a tag such as `v0.5.0` publishes a release with the zip and
-its checksum. The tag must match the `version` in `qr-code/plugin.json` and `qr-code-src/Cargo.toml`.
+its checksum. The tag must match the `version` in `code-maker/plugin.json` and `code-maker-src/Cargo.toml`.
 
 ## Licence
 

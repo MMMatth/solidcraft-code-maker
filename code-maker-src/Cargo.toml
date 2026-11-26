@@ -1,0 +1,21 @@
+[package]
+name = "code-maker-src"
+version = "0.5.1"
+edition = "2024"
+license = "MIT"
+
+# A crate of its own, not part of any workspace around it.
+[workspace]
+
+[dependencies]
+qrcodegen = "1.8"
+serde_json = "1"
+wit-bindgen = "0.63"
+
+[lib]
+crate-type = ["cdylib"]
+
+[profile.release]
+opt-level = "s"
+lto = true
+strip = true

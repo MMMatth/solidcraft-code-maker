@@ -1,0 +1,190 @@
+{
+  "id": "code-maker",
+  "name": "Code Maker",
+  "version": "0.5.1",
+  "description": "Puts a QR code on a plate or on a face of your model.",
+  "capabilities": [
+    "commands@0.2"
+  ],
+  "runtime": {
+    "module": "code-maker.wasm",
+    "commands": [
+      "solid.box",
+      "sketch.create",
+      "sketch.line",
+      "sketch.finish",
+      "solid.extrude",
+      "model.faces",
+      "appearance.assign",
+      "document.inspect"
+    ],
+    "entries": [
+      {
+        "name": "code",
+        "effect": "edit",
+        "input_schema": {
+          "type": "object",
+          "x-solidcraft-icon": "i/qr.svg",
+          "properties": {
+            "text": {
+              "type": "string",
+              "title": "Text or link",
+              "default": "https://example.com",
+              "maxLength": 500
+            },
+            "face": {
+              "type": "array",
+              "title": "Put it on a face (optional)",
+              "description": "Click a flat face of your model. Leave empty to get a new plate.",
+              "maxItems": 1,
+              "x-solidcraft-selection": {
+                "version": 1,
+                "accept": [
+                  "face"
+                ]
+              }
+            },
+            "style": {
+              "type": "string",
+              "title": "Style",
+              "default": "raised",
+              "oneOf": [
+                {
+                  "const": "raised",
+                  "title": "Raised"
+                },
+                {
+                  "const": "engraved",
+                  "title": "Engraved"
+                }
+              ]
+            },
+            "color": {
+              "type": "string",
+              "title": "Colour of the code",
+              "default": "black",
+              "description": "Colours the raised modules (or the engraving) so the code stands out. Pick No colour to keep the colour of the part.",
+              "oneOf": [
+                {
+                  "const": "black",
+                  "title": "Black"
+                },
+                {
+                  "const": "blue",
+                  "title": "Blue"
+                },
+                {
+                  "const": "red",
+                  "title": "Red"
+                },
+                {
+                  "const": "green",
+                  "title": "Green"
+                },
+                {
+                  "const": "orange",
+                  "title": "Orange"
+                },
+                {
+                  "const": "yellow",
+                  "title": "Yellow"
+                },
+                {
+                  "const": "white",
+                  "title": "White"
+                },
+                {
+                  "const": "none",
+                  "title": "No colour"
+                }
+              ]
+            },
+            "size": {
+              "type": "number",
+              "title": "Size",
+              "default": 30,
+              "minimum": 5,
+              "maximum": 500,
+              "unit": "mm"
+            },
+            "height": {
+              "type": "number",
+              "title": "Height or depth",
+              "default": 0.6,
+              "minimum": 0.1,
+              "maximum": 20,
+              "unit": "mm"
+            },
+            "move_x": {
+              "type": "number",
+              "title": "Move X",
+              "default": 0,
+              "minimum": -100000,
+              "maximum": 100000,
+              "unit": "mm",
+              "description": "Moves the code along the world X axis. On a face, keep the move along the face to stay on it."
+            },
+            "move_y": {
+              "type": "number",
+              "title": "Move Y",
+              "default": 0,
+              "minimum": -100000,
+              "maximum": 100000,
+              "unit": "mm",
+              "description": "Moves the code along the world Y axis. On a face, keep the move along the face to stay on it."
+            },
+            "move_z": {
+              "type": "number",
+              "title": "Move Z",
+              "default": 0,
+              "minimum": -100000,
+              "maximum": 100000,
+              "unit": "mm",
+              "description": "Moves the code along the world Z axis. On a face, keep the move along the face to stay on it."
+            },
+            "move_axes": {
+              "type": "string",
+              "title": "Move along",
+              "default": "world",
+              "description": "World axes, or the face's own: X to the right, Y up and Z out of the face (for a face that is not level). Only with a face.",
+              "oneOf": [
+                {
+                  "const": "world",
+                  "title": "World axes"
+                },
+                {
+                  "const": "face",
+                  "title": "Face axes"
+                }
+              ]
+            },
+            "rotation": {
+              "type": "number",
+              "title": "Rotate",
+              "default": 0,
+              "minimum": -180,
+              "maximum": 180,
+              "unit": "deg",
+              "description": "Turns the code on the face, counter-clockwise as you look at it. Only with a face."
+            }
+          }
+        },
+        "slots": [
+          {
+            "kind": "menu",
+            "name": "Code"
+          },
+          {
+            "kind": "ribbon",
+            "name": "Code"
+          }
+        ]
+      }
+    ],
+    "limits": {
+      "fuel": 5000000000,
+      "memory_mib": 32,
+      "deadline_ms": 30000
+    }
+  }
+}

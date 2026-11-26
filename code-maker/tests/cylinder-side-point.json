@@ -1,0 +1,23 @@
+{
+ "entry": "code",
+ "design": "cylinder.sc",
+ "params": {
+  "text": "HI",
+  "size": 15,
+  "face": [
+   {
+    "type": "face",
+    "body": "Cylinder",
+    "point": [
+     20,
+     0,
+     15
+    ]
+   }
+  ]
+ },
+ "expect": {
+  "error": "invalid_input",
+  "message": "flat face"
+ }
+}
