@@ -35,8 +35,10 @@ day, kept below for the history: they have no tag and no release.
   reads through more damage or dirt, in a denser code.
 - **Fixed: a plate came out dark, with its modules light.** SolidCraft keeps colours by body name, so after a plate was
   undone or deleted, a new plate that took the same name (the first free one) inherited its old colours, and on a
-  big plate they landed on its top face. A new plate now starts with none (the reply says how many it cleared, in
-  `cleared_faces`), and the code is coloured as asked. A face of a part of yours is never touched.
+  big plate they landed on its top face. A new plate now starts with none: every face the run made is reset before
+  the code is coloured as asked (the reply says how many, in `reset_faces`). A face of a part of yours is never
+  touched. The plugin does not read the design's colour table to do it, which outgrows the 1 MiB a reply may hold
+  after a few runs and made the run fail with `command result size`.
 - **A size that suits each type**: the form starts at 30 mm for a QR code but 65 mm for an EAN-13 or 80 mm for a
   Code 128, which are wide. A size too small to print (modules under 0.4 mm) is no longer refused, which left the
   preview empty and said nothing: it is raised to the least that prints well, and the result says so (`warning`,

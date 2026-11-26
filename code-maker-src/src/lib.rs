@@ -182,24 +182,29 @@ fn make(params: &Value) -> Result<String, PluginError> {
         })
         .to_string(),
     )?;
+    // The faces of the body now: a new plate is reset, and the code is coloured, from this one listing.
+    let faces = if face.is_none() || color.is_some() { faces_of(&target)? } else { None };
     // A new plate may carry colours left by an earlier plate of the same name that was deleted or undone: SolidCraft
     // keeps colours by body name, and they land on the new faces. A plate this run made starts with none.
-    let cleared = if face.is_none() { clear_stale_colours(&target) } else { 0 };
+    let reset = match (&faces, face.is_none()) {
+        (Some(faces), true) => reset_colours(&target, faces),
+        _ => 0,
+    };
     // The colour is a finishing touch: when the host's face listing is not what is expected, the code
     // is kept and the reply says why it has no colour.
-    let (coloured, warning) = match (&color, &faces_before) {
-        (Some(hex), Some(before)) => {
-            paint(&target, hex, before, &Frame { origin, x_dir, y_dir, half: (half, half_y) }, height, engrave)?
+    let (coloured, warning) = match (&color, &faces_before, &faces) {
+        (Some(hex), Some(before), Some(faces)) => {
+            paint(&target, hex, before, faces, &Frame { origin, x_dir, y_dir, half: (half, half_y) }, height, engrave)?
         }
-        (Some(_), None) => (0, Some("the faces of the part could not be read, so the code was not coloured".to_string())),
-        (None, _) => (0, None),
+        (Some(_), _, _) => (0, Some("the faces of the part could not be read, so the code was not coloured".to_string())),
+        (None, _, _) => (0, None),
     };
     let warning = match (notice, warning) {
         (Some(a), Some(b)) => Some(format!("{a}; {b}")),
         (a, b) => a.or(b),
     };
     Ok(json!({"kind": kind.name(), "modules": n, "rows": grid.h, "module_mm": module, "width_mm": module * n as f64, "side_mm": side, "side_y_mm": side_y, "outlines": loops.len(), "dark_modules": grid.dark_count(),
-              "style": if engrave { "engraved" } else { "raised" }, "coloured_faces": coloured, "cleared_faces": cleared, "warning": warning})
+              "style": if engrave { "engraved" } else { "raised" }, "coloured_faces": coloured, "reset_faces": reset, "warning": warning})
     .to_string())
 }
 
@@ -216,27 +221,12 @@ fn look(params: &Value) -> Result<Option<String>, PluginError> {
 }
 
 /// Takes the colour off every face of a body this run just made, which only an old plate of the same name can have
-/// left there. Returns how many faces were cleared. It is best effort: when the host does not answer as expected the
-/// code is kept and nothing is cleared.
-fn clear_stale_colours(body: &str) -> usize {
-    let listed = commands::run("appearance.list", &json!({"body": body}).to_string()).ok();
-    let reply: Option<Value> = listed.and_then(|r| serde_json::from_str(&r).ok());
-    let coloured: Vec<u64> = reply
-        .as_ref()
-        .and_then(|r| r.get("body").unwrap_or(r).get("faces").and_then(Value::as_array))
-        .map(|faces| faces.iter().filter_map(|f| f.get("face").and_then(Value::as_u64)).collect())
-        .unwrap_or_default();
-    if coloured.is_empty() {
-        return 0;
-    }
-    let Ok(Some(faces)) = faces_of(body) else { return 0 };
-    let spots: Vec<Value> = faces
-        .iter()
-        .filter(|f| f.get("index").and_then(Value::as_u64).is_some_and(|i| coloured.contains(&i)))
-        .filter_map(|f| vec3(f.get("point")))
-        .map(|point| json!({"point": point, "body": body}))
-        .collect();
-    // Faces with no colour asked for go back to the look of their body.
+/// left there. It does not ask which faces are coloured (`appearance.list` answers with the whole design's colours,
+/// which outgrows the limit of a reply after a few runs): a face with no colour asked for goes back to the look of its
+/// body, and one that had none stays as it is. Returns how many faces it was done for; it is best effort.
+fn reset_colours(body: &str, faces: &[Value]) -> usize {
+    let spots: Vec<Value> =
+        faces.iter().filter_map(|f| vec3(f.get("point"))).map(|point| json!({"point": point, "body": body})).collect();
     if spots.is_empty() || commands::run("appearance.assign", &json!({"faces": spots}).to_string()).is_err() {
         return 0;
     }
@@ -269,15 +259,20 @@ struct Frame {
 /// (or depth) of the code, or square to it within the code's height. That leaves out the part's own
 /// faces, even when the code is sunk into the part. Returns how many faces were coloured and, when
 /// there is nothing to colour, why.
-fn paint(target: &str, hex: &str, before: &HashSet<String>, frame: &Frame, height: f64, engrave: bool) -> Result<(usize, Option<String>), PluginError> {
+fn paint(
+    target: &str,
+    hex: &str,
+    before: &HashSet<String>,
+    faces: &[Value],
+    frame: &Frame,
+    height: f64,
+    engrave: bool,
+) -> Result<(usize, Option<String>), PluginError> {
     let Frame { origin, x_dir, y_dir, half } = *frame;
     const EPS: f64 = 1e-3;
-    let Some(faces) = faces_of(target)? else {
-        return Ok((0, Some("the faces of the part could not be read, so the code was not coloured".to_string())));
-    };
     let normal = cross(x_dir, y_dir);
     let mut spots = Vec::new();
-    for face in &faces {
+    for face in faces {
         let name = face.get("name").and_then(Value::as_str).unwrap_or("");
         let (Some(centre), Some(point), Some(face_normal)) =
             (vec3(face.get("centroid")), vec3(face.get("point")), vec3(face.get("plane_normal")))
