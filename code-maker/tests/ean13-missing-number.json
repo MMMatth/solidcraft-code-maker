@@ -1,0 +1,10 @@
+{
+ "entry": "code",
+ "params": {
+  "kind": "ean13",
+  "size": 60
+ },
+ "expect": {
+  "error": "invalid_input"
+ }
+}

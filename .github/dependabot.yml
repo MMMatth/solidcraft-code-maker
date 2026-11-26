@@ -1,7 +1,7 @@
 version: 2
 updates:
   - package-ecosystem: cargo
-    directory: /qr-code-src
+    directory: /code-maker-src
     target-branch: dev
     schedule:
       interval: weekly

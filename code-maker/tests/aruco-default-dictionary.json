@@ -1,0 +1,16 @@
+{
+ "entry": "code",
+ "params": {
+  "kind": "aruco",
+  "size": 30
+ },
+ "expect": {
+  "reply": {
+   "result": {
+    "kind": "aruco",
+    "modules": 6
+   }
+  },
+  "tolerance": 0.001
+ }
+}

@@ -1,0 +1,19 @@
+{
+ "entry": "code",
+ "params": {
+  "kind": "aztec",
+  "text": "HELLO-123",
+  "size": 30
+ },
+ "expect": {
+  "reply": {
+   "result": {
+    "kind": "aztec",
+    "modules": 15,
+    "rows": 15,
+    "dark_modules": 109
+   }
+  },
+  "tolerance": 0.001
+ }
+}

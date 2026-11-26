@@ -1,0 +1,19 @@
+{
+ "entry": "code",
+ "params": {
+  "kind": "code128",
+  "code128_text": "ABC-123456",
+  "size": 30
+ },
+ "expect": {
+  "reply": {
+   "result": {
+    "kind": "code128",
+    "modules": 133,
+    "module_mm": 0.4,
+    "width_mm": 53.2
+   }
+  },
+  "tolerance": 0.001
+ }
+}

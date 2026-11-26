@@ -1,0 +1,10 @@
+{
+ "entry": "code",
+ "params": {
+  "kind": "code39",
+  "text": ""
+ },
+ "expect": {
+  "error": "invalid_input"
+ }
+}

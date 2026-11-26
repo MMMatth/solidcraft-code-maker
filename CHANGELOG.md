@@ -6,6 +6,59 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 Version 0.5.0 is the first published release. Versions 0.1.0 to 0.4.0 were development steps of the first
 day, kept below for the history: they have no tag and no release.
 
+## [0.6.0] - 2026-11-26
+
+### Added
+- **ArUco markers and AprilTags**: a **Type of code** list (QR code, ArUco marker, AprilTag), a **Family** list and a
+  **Marker number**. The form offers the common families: ArUco 4x4, 5x5, 6x6 and original, and AprilTag 36h11, 16h5
+  and Standard 41h12. The plugin holds every official ArUco and AprilTag dictionary, taken from OpenCV and the
+  AprilTag library, and every one was checked by decoding the drawn markers with OpenCV's ArUco
+  detector and the AprilTag library (`scripts/verify-tags.py`).
+- **Barcodes**, written by the `rxing` library: Data Matrix, Aztec, PDF417, Code 128, Code 39, Code 93, Codabar,
+  EAN-13, EAN-8, UPC-A, UPC-E and ITF, in the same **Type of code** list. A new **Bar height** field (barcodes only)
+  sets how tall the bars are, and **Size** is the width of the whole barcode. Each was read back with the ZXing
+  reader (`scripts/verify-barcodes.py`). The plugin grows from 0.2 MB to 1.6 MB.
+- Markers and barcodes go on a new plate or on a face, raised or engraved, coloured and moved like a QR code, and are named
+  `ArUco marker 2`, `EAN-13 2`, and so on when the design has some already.
+- The reply says the `kind` of the code.
+- A new icon in the isometric style of SolidCraft's own: a plate with a flat raised marker, drawn with the paths, colours and round line ends SolidCraft's icon check requires.
+
+### Changed
+- **The plugin is renamed Code Maker** (id `code-maker`, button **Code**), since it is no longer only QR codes. The
+  entry is now `code-maker.code`, which SolidCraft's MCP server exposes as `code-maker_code` (it was `qr-code_qr`).
+  Remove the old QR Code plugin before installing this one.
+- The form starts with **Type of code**, then shows only what that type needs: the text for a QR code, the
+  family and the number for an ArUco marker or an AprilTag.
+- The fields are in a logical order (type, content, face, look, size, position).
+- The "too small" message no longer talks about a shorter text for a marker, which has none.
+- **Error correction for a QR code**: Low (7%), Medium (15%, the default), Quartile (25%) or High (30%). A higher level
+  reads through more damage or dirt, in a denser code.
+- **Fixed: a plate came out dark, with its modules light.** SolidCraft keeps colours by body name, so after a plate was
+  undone or deleted, a new plate that took the same name (the first free one) inherited its old colours, and on a
+  big plate they landed on its top face. A new plate now starts with none: every face the run made is reset before
+  the code is coloured as asked (the reply says how many, in `reset_faces`). A face of a part of yours is never
+  touched. The plugin does not read the design's colour table to do it, which outgrows the 1 MiB a reply may hold
+  after a few runs and made the run fail with `command result size`.
+- **A size that suits each type**: the form starts at 30 mm for a QR code but 65 mm for an EAN-13 or 80 mm for a
+  Code 128, which are wide. A size too small to print (modules under 0.4 mm) is no longer refused, which left the
+  preview empty and said nothing: it is raised to the least that prints well, and the result says so (`warning`,
+  with `width_mm` and `module_mm`). Code 128 has its own field, `Code 128 text`.
+- **Each strict barcode has its own field** (EAN-13 number, UPC-A number, Code 39 text, ...) with its rule and a working
+  example, and a mistake says what is wrong: a wrong length, a character the code does not allow, or the check digit it
+  should have. Spaces and hyphens in a number are ignored.
+- **One library for every code**: QR codes now come from `rxing` too, with the medium error correction by default, instead
+  of `qrcodegen`. They scan the same, but a few are drawn with another mask, so they differ from 0.5.1's in some modules.
+- Internally the plugin draws any grid of dark modules, square or one row of bars, so another
+  kind of code needs only a new grid.
+
+## [0.5.1] - 2026-11-25
+
+### Fixed
+- A face given by a point on it, which is how an MCP client or a script usually picks one, was refused with
+  "the pick has no face index". A face can now be picked by `index`, by `name` or by a `point` on it. With a
+  point, the flat face whose plane holds the point is used, and a point on a curved face is refused with a clear
+  message.
+
 ## [0.5.0] - 2026-11-25
 
 ### Added
@@ -55,4 +108,5 @@ day, kept below for the history: they have no tag and no release.
 ### Added
 - First version: a plate carrying a QR code, raised or engraved.
 
+[0.5.1]: ../../releases/tag/v0.5.1
 [0.5.0]: ../../releases/tag/v0.5.0

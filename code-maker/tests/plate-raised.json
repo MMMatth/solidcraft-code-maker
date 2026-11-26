@@ -1,0 +1,21 @@
+{
+ "entry": "code",
+ "params": {
+  "text": "HELLO",
+  "size": 25
+ },
+ "expect": {
+  "reply": {
+   "result": {
+    "coloured_faces": 273
+   }
+  },
+  "model": {
+   "body_count": 1,
+   "total": {
+    "volume_mm3": 1958.61678
+   }
+  },
+  "tolerance": 0.001
+ }
+}

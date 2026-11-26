@@ -1,0 +1,24 @@
+{
+ "entry": "code",
+ "params": {
+  "text": "HELLO",
+  "size": 5
+ },
+ "expect": {
+  "reply": {
+   "result": {
+    "modules": 21,
+    "module_mm": 0.4,
+    "width_mm": 8.4,
+    "dark_modules": 218
+   }
+  },
+  "model": {
+   "body_count": 1,
+   "total": {
+    "volume_mm3": 220.928
+   }
+  },
+  "tolerance": 0.001
+ }
+}

@@ -15,6 +15,6 @@ when a fix is released.
 ## What the plugin can do
 
 The plugin runs in SolidCraft's sandbox. It asks for no file access and no network access. It only runs the
-SolidCraft commands listed in `qr-code/plugin.json` (`solid.box`, `sketch.create`, `sketch.line`,
+SolidCraft commands listed in `code-maker/plugin.json` (`solid.box`, `sketch.create`, `sketch.line`,
 `sketch.finish`, `solid.extrude`, `model.faces`, `appearance.assign` and `document.inspect`). Check that
 list when you install a new version.

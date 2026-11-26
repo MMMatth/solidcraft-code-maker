@@ -1,0 +1,7 @@
+# Settings of `cargo audit`, which the security workflow runs from the repository root.
+[advisories]
+# chrono is "unmaintained" (RUSTSEC-2026-0543): a notice, not a vulnerability, and no fixed version exists. It comes
+# with rxing, whose latest version needs it, to read calendar dates when a code is *decoded*; this plugin only writes
+# codes. `--deny warnings` stays on, so any other warning still fails the build. Remove this line once rxing no longer
+# depends on chrono.
+ignore = ["RUSTSEC-2026-0543"]

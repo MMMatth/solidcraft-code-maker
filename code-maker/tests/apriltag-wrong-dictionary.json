@@ -1,0 +1,10 @@
+{
+ "entry": "code",
+ "params": {
+  "kind": "apriltag",
+  "apriltag_dictionary": "4x4_50"
+ },
+ "expect": {
+  "error": "invalid_input"
+ }
+}

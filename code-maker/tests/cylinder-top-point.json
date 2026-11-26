@@ -1,0 +1,33 @@
+{
+ "entry": "code",
+ "design": "cylinder.sc",
+ "params": {
+  "text": "HI",
+  "size": 15,
+  "face": [
+   {
+    "type": "face",
+    "body": "Cylinder",
+    "point": [
+     2,
+     3,
+     30
+    ]
+   }
+  ]
+ },
+ "expect": {
+  "reply": {
+   "result": {
+    "coloured_faces": 330
+   }
+  },
+  "model": {
+   "body_count": 1,
+   "total": {
+    "volume_mm3": 37764.0098
+   }
+  },
+  "tolerance": 0.001
+ }
+}

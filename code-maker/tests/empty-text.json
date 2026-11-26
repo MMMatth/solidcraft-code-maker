@@ -1,0 +1,9 @@
+{
+ "entry": "code",
+ "params": {
+  "text": ""
+ },
+ "expect": {
+  "error": "invalid_input"
+ }
+}

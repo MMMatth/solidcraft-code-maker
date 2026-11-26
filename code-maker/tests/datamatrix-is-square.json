@@ -1,0 +1,25 @@
+{
+ "entry": "code",
+ "params": {
+  "kind": "datamatrix",
+  "text": "Code Maker",
+  "size": 32
+ },
+ "expect": {
+  "reply": {
+   "result": {
+    "kind": "datamatrix",
+    "modules": 16,
+    "rows": 16,
+    "dark_modules": 142
+   }
+  },
+  "model": {
+   "body_count": 1,
+   "total": {
+    "volume_mm3": 3540.8
+   }
+  },
+  "tolerance": 0.001
+ }
+}

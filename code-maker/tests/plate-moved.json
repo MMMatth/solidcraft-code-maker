@@ -1,0 +1,24 @@
+{
+ "entry": "code",
+ "params": {
+  "text": "HELLO",
+  "size": 25,
+  "move_x": 100,
+  "move_y": -40,
+  "move_z": 10
+ },
+ "expect": {
+  "reply": {
+   "result": {
+    "coloured_faces": 273
+   }
+  },
+  "model": {
+   "body_count": 1,
+   "total": {
+    "volume_mm3": 1958.61678
+   }
+  },
+  "tolerance": 0.001
+ }
+}

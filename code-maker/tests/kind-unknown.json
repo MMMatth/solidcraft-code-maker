@@ -1,0 +1,9 @@
+{
+ "entry": "code",
+ "params": {
+  "kind": "datamatrix"
+ },
+ "expect": {
+  "error": "invalid_input"
+ }
+}

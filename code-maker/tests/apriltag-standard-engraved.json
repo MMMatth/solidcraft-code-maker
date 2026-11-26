@@ -1,0 +1,28 @@
+{
+ "entry": "code",
+ "params": {
+  "kind": "apriltag",
+  "id": 100,
+  "size": 36,
+  "style": "engraved",
+  "height": 0.8,
+  "apriltag_dictionary": "standard_41h12"
+ },
+ "expect": {
+  "reply": {
+   "result": {
+    "kind": "apriltag",
+    "modules": 9,
+    "style": "engraved",
+    "dark_modules": 45
+   }
+  },
+  "model": {
+   "body_count": 1,
+   "total": {
+    "volume_mm3": 3296
+   }
+  },
+  "tolerance": 0.001
+ }
+}

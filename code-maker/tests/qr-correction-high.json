@@ -1,0 +1,25 @@
+{
+ "entry": "code",
+ "params": {
+  "kind": "qr",
+  "text": "https://example.com",
+  "qr_correction": "high",
+  "size": 30
+ },
+ "expect": {
+  "reply": {
+   "result": {
+    "kind": "qr",
+    "modules": 29,
+    "dark_modules": 436
+   }
+  },
+  "model": {
+   "body_count": 1,
+   "total": {
+    "volume_mm3": 2610.749
+   }
+  },
+  "tolerance": 0.001
+ }
+}

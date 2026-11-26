@@ -19,14 +19,14 @@ jobs:
           components: clippy
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: qr-code-src
+          workspaces: code-maker-src
       - name: Install wasm-tools
         run: cargo install wasm-tools --locked --version 1.263.0
       - name: Clippy
-        run: cargo clippy --manifest-path qr-code-src/Cargo.toml --target wasm32-unknown-unknown --locked -- -D warnings
+        run: cargo clippy --manifest-path code-maker-src/Cargo.toml --target wasm32-unknown-unknown --locked -- -D warnings
       - name: Build the zip
         run: scripts/package.sh
       - uses: actions/upload-artifact@v7
         with:
-          name: qr-code-zip
+          name: code-maker-zip
           path: dist/*.zip
