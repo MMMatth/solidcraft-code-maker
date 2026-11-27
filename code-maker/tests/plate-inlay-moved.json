@@ -1,0 +1,26 @@
+{
+ "entry": "code",
+ "params": {
+  "text": "HELLO",
+  "size": 25,
+  "style": "inlay",
+  "height": 0.8,
+  "move_x": 10,
+  "move_y": 5
+ },
+ "expect": {
+  "reply": {
+   "result": {
+    "style": "inlay",
+    "coloured_faces": 308
+   }
+  },
+  "model": {
+   "body_count": 2,
+   "total": {
+    "volume_mm3": 1771.542
+   }
+  },
+  "tolerance": 0.001
+ }
+}

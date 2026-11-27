@@ -1,0 +1,10 @@
+{
+ "entry": "code",
+ "params": {
+  "text": "HELLO",
+  "own_body": "yes"
+ },
+ "expect": {
+  "error": "invalid_input"
+ }
+}

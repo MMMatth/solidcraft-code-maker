@@ -1,0 +1,31 @@
+{
+ "entry": "code",
+ "design": "cylinder.sc",
+ "params": {
+  "text": "HI",
+  "size": 15,
+  "style": "inlay",
+  "face": [
+   {
+    "type": "face",
+    "body": "Cylinder",
+    "index": 1
+   }
+  ]
+ },
+ "expect": {
+  "reply": {
+   "result": {
+    "style": "inlay",
+    "coloured_faces": 368
+   }
+  },
+  "model": {
+   "body_count": 2,
+   "total": {
+    "volume_mm3": 37699.1118
+   }
+  },
+  "tolerance": 0.001
+ }
+}

@@ -77,7 +77,14 @@ fn make(params: &Value) -> Result<String, PluginError> {
         other => return Err(invalid("style", format!("`{other}` is not raised, engraved or inlay"))),
     };
     // The code as a body of its own (an inlay always is): the slicer can give it another filament than the part.
-    let own_body = inlay || params.get("own_body").and_then(Value::as_bool).unwrap_or(false);
+    let own_body = match params.get("own_body") {
+        None | Some(Value::Null) => false,
+        Some(Value::Bool(b)) => *b,
+        Some(_) => return Err(invalid("own_body", "must be true or false")),
+    };
+    // An engraving that is a body of its own is an inlay.
+    let inlay = inlay || (engrave && own_body);
+    let own_body = own_body || inlay;
     let color = look(params)?;
     let face = match params.get("face").and_then(Value::as_array).and_then(|a| a.first()) {
         Some(pick) => Some(face_frame(pick)?),
@@ -85,6 +92,9 @@ fn make(params: &Value) -> Result<String, PluginError> {
     };
     if face.is_none() && turn != 0.0 {
         return Err(invalid("rotation", "turning needs a face: pick one, or leave Rotate at 0"));
+    }
+    if inlay && face.is_some() && mv[2] != 0.0 {
+        return Err(invalid("move_z", "an inlay lies in the face, so it cannot be lifted or sunk: use Move X or Y, or a plain engraving"));
     }
     if engrave && face.is_none() && height >= PLATE {
         return Err(invalid("height", format!("an engraving on a new plate must be under {PLATE} mm deep")));

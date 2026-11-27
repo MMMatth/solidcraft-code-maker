@@ -1,0 +1,26 @@
+{
+ "entry": "code",
+ "params": {
+  "kind": "apriltag",
+  "id": 3,
+  "size": 30,
+  "style": "inlay",
+  "height": 0.8
+ },
+ "expect": {
+  "reply": {
+   "result": {
+    "kind": "apriltag",
+    "style": "inlay",
+    "coloured_faces": 36
+   }
+  },
+  "model": {
+   "body_count": 2,
+   "total": {
+    "volume_mm3": 1800.0
+   }
+  },
+  "tolerance": 0.001
+ }
+}

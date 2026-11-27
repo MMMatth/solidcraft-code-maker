@@ -13,6 +13,8 @@ day, kept below for the history: they have no tag and no release.
   plate and the code in two filaments. The plate keeps its pocket and the code is one body named after it, coloured as
   asked.
 - **Code as its own body**: a raised code can also be a body of its own instead of part of the plate or face.
+  An engraving that is its own body is an inlay. An inlay lies in its face, so it cannot be lifted or sunk (`move_z`) on a
+  face: Move X and Y still work.
 
 ## [0.6.1] - 2026-11-27
 

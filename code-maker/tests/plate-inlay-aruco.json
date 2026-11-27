@@ -1,0 +1,27 @@
+{
+ "entry": "code",
+ "params": {
+  "kind": "aruco",
+  "id": 7,
+  "size": 30,
+  "aruco_dictionary": "4x4_50",
+  "style": "inlay",
+  "height": 0.8
+ },
+ "expect": {
+  "reply": {
+   "result": {
+    "kind": "aruco",
+    "style": "inlay",
+    "coloured_faces": 20
+   }
+  },
+  "model": {
+   "body_count": 2,
+   "total": {
+    "volume_mm3": 3200.0
+   }
+  },
+  "tolerance": 0.001
+ }
+}
