@@ -1,0 +1,25 @@
+{
+ "entry": "code",
+ "design": "one-code.sc",
+ "params": {
+  "text": "SECOND",
+  "size": 25,
+  "style": "inlay",
+  "height": 0.8
+ },
+ "expect": {
+  "reply": {
+   "result": {
+    "style": "inlay",
+    "coloured_faces": 284
+   }
+  },
+  "model": {
+   "body_count": 3,
+   "total": {
+    "volume_mm3": 3730.1587
+   }
+  },
+  "tolerance": 0.001
+ }
+}

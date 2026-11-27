@@ -1,0 +1,26 @@
+{
+ "entry": "code",
+ "params": {
+  "text": "HELLO",
+  "size": 25,
+  "style": "engraved",
+  "height": 0.8,
+  "own_body": true
+ },
+ "expect": {
+  "reply": {
+   "result": {
+    "style": "inlay",
+    "own_body": true,
+    "coloured_faces": 308
+   }
+  },
+  "model": {
+   "body_count": 2,
+   "total": {
+    "volume_mm3": 1771.542
+   }
+  },
+  "tolerance": 0.001
+ }
+}

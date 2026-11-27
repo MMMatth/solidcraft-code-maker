@@ -1,0 +1,20 @@
+{
+ "entry": "code",
+ "design": "block.sc",
+ "params": {
+  "text": "HI",
+  "size": 21,
+  "style": "inlay",
+  "move_z": -0.3,
+  "face": [
+   {
+    "type": "face",
+    "body": "Block",
+    "index": 0
+   }
+  ]
+ },
+ "expect": {
+  "error": "invalid_input"
+ }
+}

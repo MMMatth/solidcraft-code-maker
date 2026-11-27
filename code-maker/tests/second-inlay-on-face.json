@@ -1,0 +1,31 @@
+{
+ "entry": "code",
+ "design": "block.sc",
+ "params": {
+  "text": "HI",
+  "size": 21,
+  "style": "inlay",
+  "face": [
+   {
+    "type": "face",
+    "body": "Block",
+    "index": 0
+   }
+  ]
+ },
+ "expect": {
+  "reply": {
+   "result": {
+    "style": "inlay",
+    "coloured_faces": 368
+   }
+  },
+  "model": {
+   "body_count": 2,
+   "total": {
+    "volume_mm3": 12000.0
+   }
+  },
+  "tolerance": 0.001
+ }
+}

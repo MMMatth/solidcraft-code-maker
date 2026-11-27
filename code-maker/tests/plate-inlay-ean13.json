@@ -1,0 +1,28 @@
+{
+ "entry": "code",
+ "params": {
+  "kind": "ean13",
+  "size": 52,
+  "bar_height": 10,
+  "ean13_text": "5901234123457",
+  "style": "inlay",
+  "height": 0.8
+ },
+ "expect": {
+  "reply": {
+   "result": {
+    "kind": "ean13",
+    "style": "inlay",
+    "dark_modules": 49,
+    "coloured_faces": 180
+   }
+  },
+  "model": {
+   "body_count": 2,
+   "total": {
+    "volume_mm3": 1272.0
+   }
+  },
+  "tolerance": 0.001
+ }
+}

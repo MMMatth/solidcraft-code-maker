@@ -69,11 +69,22 @@ fn make(params: &Value) -> Result<String, PluginError> {
         other => return Err(invalid("move_axes", format!("`{other}` is not world or face"))),
     };
     let turn = number(params, "rotation", 0.0, -180.0, 180.0)?.to_radians();
-    let engrave = match params.get("style").and_then(Value::as_str).unwrap_or("raised") {
-        "raised" => false,
-        "engraved" => true,
-        other => return Err(invalid("style", format!("`{other}` is not raised or engraved"))),
+    // An inlay is an engraving filled flush by a body of its own, so the two can take different filaments.
+    let (engrave, inlay) = match params.get("style").and_then(Value::as_str).unwrap_or("raised") {
+        "raised" => (false, false),
+        "engraved" => (true, false),
+        "inlay" => (true, true),
+        other => return Err(invalid("style", format!("`{other}` is not raised, engraved or inlay"))),
     };
+    // The code as a body of its own (an inlay always is): the slicer can give it another filament than the part.
+    let own_body = match params.get("own_body") {
+        None | Some(Value::Null) => false,
+        Some(Value::Bool(b)) => *b,
+        Some(_) => return Err(invalid("own_body", "must be true or false")),
+    };
+    // An engraving that is a body of its own is an inlay.
+    let inlay = inlay || (engrave && own_body);
+    let own_body = own_body || inlay;
     let color = look(params)?;
     let face = match params.get("face").and_then(Value::as_array).and_then(|a| a.first()) {
         Some(pick) => Some(face_frame(pick)?),
@@ -81,6 +92,9 @@ fn make(params: &Value) -> Result<String, PluginError> {
     };
     if face.is_none() && turn != 0.0 {
         return Err(invalid("rotation", "turning needs a face: pick one, or leave Rotate at 0"));
+    }
+    if inlay && face.is_some() && mv[2] != 0.0 {
+        return Err(invalid("move_z", "an inlay lies in the face, so it cannot be lifted or sunk: use Move X or Y, or a plain engraving"));
     }
     if engrave && face.is_none() && height >= PLATE {
         return Err(invalid("height", format!("an engraving on a new plate must be under {PLATE} mm deep")));
@@ -171,19 +185,24 @@ fn make(params: &Value) -> Result<String, PluginError> {
     commands::run("sketch.finish", "{}")?;
     // The faces the body has before the code: only the ones the extrusion adds get the colour.
     let faces_before = if color.is_some() { face_names(&target)? } else { None };
-    // Modules lifted off the face touch nothing, so they are kept in one body explicitly.
-    commands::run(
-        "solid.extrude",
-        &json!({
-            "sketch": label, "name": label, "distance": height, "profiles": dark,
-            "operation": if engrave { "cut" } else { "join" },
-            "direction": if engrave { "negative" } else { "positive" },
-            "targets": [target], "touching": "one_body",
-        })
-        .to_string(),
-    )?;
+    if engrave || !own_body {
+        // Modules lifted off the face touch nothing, so they are kept in one body explicitly.
+        commands::run(
+            "solid.extrude",
+            &json!({
+                "sketch": label, "name": label, "distance": height, "profiles": dark,
+                "operation": if engrave { "cut" } else { "join" },
+                "direction": if engrave { "negative" } else { "positive" },
+                "targets": [target], "touching": "one_body",
+            })
+            .to_string(),
+        )?;
+    }
+    if own_body {
+        make_body(&label, &dark, height, engrave)?;
+    }
     // The faces of the body now: a new plate is reset, and the code is coloured, from this one listing.
-    let faces = if face.is_none() || color.is_some() { faces_of(&target)? } else { None };
+    let faces = if face.is_none() || (color.is_some() && !own_body) { faces_of(&target)? } else { None };
     // A new plate may carry colours left by an earlier plate of the same name that was deleted or undone: SolidCraft
     // keeps colours by body name, and they land on the new faces. A plate this run made starts with none.
     let reset = match (&faces, face.is_none()) {
@@ -192,20 +211,66 @@ fn make(params: &Value) -> Result<String, PluginError> {
     };
     // The colour is a finishing touch: when the host's face listing is not what is expected, the code
     // is kept and the reply says why it has no colour.
-    let (coloured, warning) = match (&color, &faces_before, &faces) {
-        (Some(hex), Some(before), Some(faces)) => {
-            paint(&target, hex, before, faces, &Frame { origin, x_dir, y_dir, half: (half, half_y) }, height, engrave)?
+    let (coloured, warning) = if own_body {
+        colour_body(&label, color.as_deref())?
+    } else {
+        match (&color, &faces_before, &faces) {
+            (Some(hex), Some(before), Some(faces)) => {
+                paint(&target, hex, before, faces, &Frame { origin, x_dir, y_dir, half: (half, half_y) }, height, engrave)?
+            }
+            (Some(_), _, _) => (0, Some("the faces of the part could not be read, so the code was not coloured".to_string())),
+            (None, _, _) => (0, None),
         }
-        (Some(_), _, _) => (0, Some("the faces of the part could not be read, so the code was not coloured".to_string())),
-        (None, _, _) => (0, None),
     };
     let warning = match (notice, warning) {
         (Some(a), Some(b)) => Some(format!("{a}; {b}")),
         (a, b) => a.or(b),
     };
     Ok(json!({"kind": kind.name(), "modules": n, "rows": grid.h, "module_mm": module, "width_mm": module * n as f64, "side_mm": side, "side_y_mm": side_y, "outlines": loops.len(), "dark_modules": grid.dark_count(),
-              "style": if engrave { "engraved" } else { "raised" }, "coloured_faces": coloured, "reset_faces": reset, "warning": warning})
+              "style": if inlay { "inlay" } else if engrave { "engraved" } else { "raised" }, "own_body": own_body, "coloured_faces": coloured, "reset_faces": reset, "warning": warning})
     .to_string())
+}
+
+/// Makes the code a body of its own, named after it: the first dark outline makes the body and the others join it,
+/// kept in the one body although they touch only the part. Sunk (`down`), it fills the engraving flush and the part
+/// keeps its pocket; otherwise it stands on the face.
+fn make_body(label: &str, dark: &[Value], height: f64, down: bool) -> Result<(), PluginError> {
+    let direction = if down { "negative" } else { "positive" };
+    let Some((first, rest)) = dark.split_first() else { return Ok(()) };
+    commands::run(
+        "solid.extrude",
+        &json!({
+            "sketch": label, "name": format!("{label} inlay"), "body_name": label, "distance": height,
+            "profiles": [first], "operation": "new", "direction": direction,
+        })
+        .to_string(),
+    )?;
+    if !rest.is_empty() {
+        commands::run(
+            "solid.extrude",
+            &json!({
+                "sketch": label, "name": format!("{label} inlay 2"), "distance": height, "profiles": rest,
+                "operation": "join", "direction": direction, "targets": [label], "touching": "one_body",
+            })
+            .to_string(),
+        )?;
+    }
+    Ok(())
+}
+
+/// A code that is a body of its own is all colour, so every one of its faces gets it. SolidCraft keeps colours by body name,
+/// so a body that takes the name of one deleted or undone first loses what it carried.
+fn colour_body(body: &str, color: Option<&str>) -> Result<(usize, Option<String>), PluginError> {
+    let Some(faces) = faces_of(body)? else {
+        return Ok((0, color.map(|_| "the faces of the code could not be read, so it was not coloured".to_string())));
+    };
+    reset_colours(body, &faces);
+    let Some(hex) = color else { return Ok((0, None)) };
+    let spots: Vec<Value> =
+        faces.iter().filter_map(|f| vec3(f.get("point"))).map(|point| json!({"point": point, "body": body})).collect();
+    let count = assign(&spots, Some(hex));
+    let missed = spots.len() - count;
+    Ok((count, (missed > 0).then(|| format!("{missed} face(s) of the code could not be coloured"))))
 }
 
 /// The colour chosen in the form as `#rrggbb`; `None` means no colour.
