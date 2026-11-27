@@ -3,7 +3,7 @@
   "id": "code-maker",
   "name": "Code Maker",
   "kind": "plugin",
-  "version": "0.7.1",
+  "version": "0.7.2",
   "licence": "MIT",
   "min_app_version": "0.48.0",
   "summary": "QR codes, barcodes, ArUco markers and AprilTags on a plate or a face, raised or engraved.",
@@ -25,7 +25,7 @@
   ],
   "files": [
     {
-      "asset": "code-maker-0.7.1.zip",
+      "asset": "code-maker-0.7.2.zip",
       "role": "package"
     },
     {

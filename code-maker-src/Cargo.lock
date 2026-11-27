@@ -73,7 +73,7 @@ dependencies = [
 
 [[package]]
 name = "code-maker-src"
-version = "0.7.1"
+version = "0.7.2"
 dependencies = [
  "rxing",
  "serde_json",
