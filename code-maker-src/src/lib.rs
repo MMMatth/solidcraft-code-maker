@@ -184,22 +184,32 @@ fn make(params: &Value) -> Result<String, PluginError> {
     }
     commands::run("sketch.finish", "{}")?;
     // The faces the body has before the code: only the ones the extrusion adds get the colour.
-    let faces_before = if color.is_some() { face_names(&target)? } else { None };
-    if engrave || !own_body {
+    let faces_before = if color.is_some() && !own_body { face_names(&target)? } else { None };
+    if engrave {
+        // The code is made first, sunk into the part, and one combine cuts the part with it. Cutting the outlines out of
+        // the part as an extrusion takes several times longer (95 outlines: 14 s against 4 s). An inlay keeps the body
+        // as it is; a plain engraving uses it up.
+        make_body(&label, &dark, height, true)?;
+        commands::run(
+            "solid.combine",
+            &json!({
+                "name": format!("{label} pocket"), "target": target, "tools": [label],
+                "operation": "cut", "keep_tools": own_body,
+            })
+            .to_string(),
+        )?;
+    } else if own_body {
+        make_body(&label, &dark, height, false)?;
+    } else {
         // Modules lifted off the face touch nothing, so they are kept in one body explicitly.
         commands::run(
             "solid.extrude",
             &json!({
                 "sketch": label, "name": label, "distance": height, "profiles": dark,
-                "operation": if engrave { "cut" } else { "join" },
-                "direction": if engrave { "negative" } else { "positive" },
-                "targets": [target], "touching": "one_body",
+                "operation": "join", "direction": "positive", "targets": [target], "touching": "one_body",
             })
             .to_string(),
         )?;
-    }
-    if own_body {
-        make_body(&label, &dark, height, engrave)?;
     }
     // The faces of the body now: a new plate is reset, and the code is coloured, from this one listing.
     let faces = if face.is_none() || (color.is_some() && !own_body) { faces_of(&target)? } else { None };

@@ -7,8 +7,15 @@
   "licence": "MIT",
   "min_app_version": "0.48.0",
   "summary": "QR codes, barcodes, ArUco markers and AprilTags on a plate or a face, raised or engraved.",
+  "description": "README.md",
   "category": "generators",
-  "tags": ["qr-code", "barcode", "aruco", "apriltag", "3d-printing"],
+  "tags": [
+    "qr-code",
+    "barcode",
+    "aruco",
+    "apriltag",
+    "3d-printing"
+  ],
   "permissions": [
     "commands:solid",
     "commands:sketch",
@@ -17,7 +24,25 @@
     "commands:document"
   ],
   "files": [
-    { "asset": "code-maker-0.7.1.zip", "role": "package" },
-    { "path": "docs/demo.webp", "role": "image" }
+    {
+      "asset": "code-maker-0.7.1.zip",
+      "role": "package"
+    },
+    {
+      "path": "docs/demo.webp",
+      "role": "image"
+    },
+    {
+      "path": "docs/styles.webp",
+      "role": "image"
+    },
+    {
+      "path": "docs/part-inlay.webp",
+      "role": "image"
+    },
+    {
+      "path": "docs/kinds.webp",
+      "role": "image"
+    }
   ]
 }
