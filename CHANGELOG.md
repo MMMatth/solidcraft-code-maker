@@ -28,8 +28,8 @@ day, kept below for the history: they have no tag and no release.
   120-outline inlay takes 8 s, where 0.7.1 stopped at 30 s.
 
 ### Added
-- Pictures for the workshop: the three styles side by side, an inlay on a part, the types of code, and a raised code
-  that is its own body. The manifest lists them and takes the README as its description.
+- Pictures for the workshop: the three styles side by side, an inlay on a part and the types of code. The manifest lists
+  them and takes the README as its description.
 
 ## [0.7.1] - 2026-11-27
 
