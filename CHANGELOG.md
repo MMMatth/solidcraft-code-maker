@@ -6,6 +6,12 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 Version 0.5.0 is the first published release. Versions 0.1.0 to 0.4.0 were development steps of the first
 day, kept below for the history: they have no tag and no release.
 
+## [Unreleased]
+
+### Added
+- Pictures for the workshop: an inlay, an inlay on a part, and a raised code that is its own body. The manifest lists them
+  and takes the README as its description.
+
 ## [0.7.1] - 2026-11-27
 
 ### Changed
