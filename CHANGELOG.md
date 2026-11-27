@@ -8,6 +8,8 @@ day, kept below for the history: they have no tag and no release.
 
 ## [Unreleased]
 
+## [0.7.2] - 2026-11-27
+
 ### Changed
 - **An inlay or an engraving is much faster, on a plate or on a face.** The code is now made first, sunk into the part, and
   one combine cuts the part with it (an inlay keeps the code as its own body, an engraving uses it up). Cutting the
