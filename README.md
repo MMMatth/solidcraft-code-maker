@@ -8,7 +8,7 @@ A [SolidCraft](https://github.com/tangency-labs/solidcraft) plugin that puts a Q
 [AprilTag](https://github.com/AprilRobotics/apriltag) (the fiducial markers cameras and robots track) on a new plate or on a
 face of your model, raised or engraved, ready for 3D printing.
 
-<p align="center"><img src="docs/demo.gif" alt="A QR code, an EAN-13 and a Code 128 barcode, a Data Matrix, an Aztec code, an AprilTag, an ArUco marker and an engraved QR code, each on its plate" width="560"></p>
+<p align="center"><img src="docs/demo.webp" alt="A QR code, an EAN-13 and a Code 128 barcode, a Data Matrix, an Aztec code, an AprilTag, an ArUco marker and an engraved QR code, each on its plate" width="560"></p>
 
 The demo shows real results of the plugin in SolidCraft: one plate for each type of code, made by the plugin itself and
 photographed with `solidcraft-cli snapshot`.

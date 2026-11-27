@@ -11,6 +11,8 @@ day, kept below for the history: they have no tag and no release.
 ### Changed
 - The animated picture for the workshop (`docs/demo.webp`) is cropped to the scene, without the caption banner, which
   made it too tall.
+- The README shows that animation too, and `docs/demo.gif` and `docs/screenshot.png` are removed: the workshop takes the
+  animated WebP.
 
 ## [0.7.0] - 2026-11-27
 
