@@ -22,6 +22,10 @@ const TAG_MARGIN: f64 = 1.0;
 /// time is what limits first: each outline takes longer than the one before, and 207 take about 14 s
 /// of the 30 s a command may run.
 const MAX_LOOPS: usize = 200;
+/// Most outlines of a code that is engraved and filled: the cut takes far longer than the join of a raised code (a
+/// code of 84 outlines took 20 s, one of 156 more than 30 s, which the host stops half-way, with the plate cut and
+/// not filled), so it is refused before anything is made.
+const MAX_LOOPS_INLAY: usize = 80;
 /// Space left between a new plate and the bodies already in the design.
 const PLATE_GAP: f64 = 5.0;
 /// Smallest module that prints legibly with a common 0.4 mm nozzle.
@@ -106,6 +110,9 @@ fn make(params: &Value) -> Result<String, PluginError> {
     if loops.len() > MAX_LOOPS {
         return Err(invalid(&kind.text_field(), "too long to draw: use a shorter text or link"));
     }
+    if inlay && loops.len() > MAX_LOOPS_INLAY {
+        return Err(invalid(&kind.text_field(), "too long for an inlay: use a shorter text or link, or a plain engraving"));
+    }
     let n = grid.w;
     // `size` is the code's width; the plate adds a margin of `grid.margin_x` and `grid.margin_y` modules around it.
     let mut module = size / n as f64;
@@ -184,7 +191,7 @@ fn make(params: &Value) -> Result<String, PluginError> {
     }
     commands::run("sketch.finish", "{}")?;
     // The faces the body has before the code: only the ones the extrusion adds get the colour.
-    let faces_before = if color.is_some() { face_names(&target)? } else { None };
+    let faces_before = if color.is_some() && !own_body { face_names(&target)? } else { None };
     if engrave || !own_body {
         // Modules lifted off the face touch nothing, so they are kept in one body explicitly.
         commands::run(

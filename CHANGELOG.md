@@ -8,6 +8,11 @@ day, kept below for the history: they have no tag and no release.
 
 ## [Unreleased]
 
+### Fixed
+- **An inlay of a long text ran past the 30 s the host allows**, which stops it half-way: the plate was cut and not
+  filled. The cut of an inlay takes far longer than the join of a raised code, so a code over 80 outlines (a text or
+  link of about 50 characters) is now refused first, with a message that suggests a shorter text or a plain engraving.
+
 ### Added
 - Pictures for the workshop: an inlay, an inlay on a part, and a raised code that is its own body. The manifest lists them
   and takes the README as its description.

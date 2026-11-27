@@ -1,0 +1,20 @@
+{
+ "entry": "code",
+ "params": {
+  "text": "https://example.com/x7Kq9Zrx7Kq9Zrx7Kq9Z",
+  "size": 60,
+  "style": "inlay",
+  "height": 0.8
+ },
+ "expect": {
+  "reply": {
+   "result": {
+    "outlines": 63,
+    "style": "inlay"
+   }
+  },
+  "model": {
+   "body_count": 2
+  }
+ }
+}
