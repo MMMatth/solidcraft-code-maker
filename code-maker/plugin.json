@@ -1,7 +1,7 @@
 {
   "id": "code-maker",
   "name": "Code Maker",
-  "version": "0.6.1",
+  "version": "0.7.0",
   "description": "Puts a QR code, a barcode, an ArUco marker or an AprilTag on a plate or on a face of your model.",
   "capabilities": [
     "commands@0.2"

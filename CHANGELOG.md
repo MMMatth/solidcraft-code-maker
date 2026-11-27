@@ -6,9 +6,10 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 Version 0.5.0 is the first published release. Versions 0.1.0 to 0.4.0 were development steps of the first
 day, kept below for the history: they have no tag and no release.
 
-## [Unreleased]
+## [0.7.0] - 2026-11-27
 
 ### Added
+- An animated picture for the workshop (`docs/demo.webp`), which takes no GIF.
 - **Inlay style**: the code is engraved and the engraving is filled flush by a body of its own, so a slicer can print the
   plate and the code in two filaments. The plate keeps its pocket and the code is one body named after it, coloured as
   asked.
