@@ -6,6 +6,12 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 Version 0.5.0 is the first published release. Versions 0.1.0 to 0.4.0 were development steps of the first
 day, kept below for the history: they have no tag and no release.
 
+## [0.7.1] - 2026-11-27
+
+### Changed
+- The animated picture for the workshop (`docs/demo.webp`) is cropped to the scene, without the caption banner, which
+  made it too tall.
+
 ## [0.7.0] - 2026-11-27
 
 ### Added
