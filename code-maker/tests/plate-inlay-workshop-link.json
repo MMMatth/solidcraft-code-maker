@@ -1,0 +1,24 @@
+{
+ "entry": "code",
+ "params": {
+  "text": "https://workshop.solidcraft.io/plugin/mmmatth/code-maker",
+  "size": 40,
+  "style": "inlay",
+  "height": 0.8
+ },
+ "expect": {
+  "reply": {
+   "result": {
+    "outlines": 95,
+    "style": "inlay"
+   }
+  },
+  "model": {
+   "body_count": 2,
+   "total": {
+    "volume_mm3": 4023.045
+   }
+  },
+  "tolerance": 0.001
+ }
+}

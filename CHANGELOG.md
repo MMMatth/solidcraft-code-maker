@@ -8,10 +8,13 @@ day, kept below for the history: they have no tag and no release.
 
 ## [Unreleased]
 
-### Fixed
-- **An inlay of a long text ran past the 30 s the host allows**, which stops it half-way: the plate was cut and not
-  filled. The cut of an inlay takes far longer than the join of a raised code, so a code over 80 outlines (a text or
-  link of about 50 characters) is now refused first, with a message that suggests a shorter text or a plain engraving.
+### Changed
+- **An inlay or an engraving is much faster, on a plate or on a face.** The code is now made first, sunk into the part, and
+  one combine cuts the part with it (an inlay keeps the code as its own body, an engraving uses it up). Cutting the
+  outlines out of the part as an extrusion took several times longer: a 56-character link now takes 6 s as an inlay
+  instead of 16 s, and a 120-outline code takes 8 s on a face instead of failing at 30 s. The time now grows evenly
+  with the length of the text, so an inlay or an engraving takes a link as long as a raised code does (200 outlines,
+  about 150 characters). The plugin now asks the host for `solid.combine`.
 
 ### Added
 - Pictures for the workshop: an inlay, an inlay on a part, and a raised code that is its own body. The manifest lists them

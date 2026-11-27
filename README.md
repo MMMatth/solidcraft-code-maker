@@ -91,7 +91,7 @@ Good to know:
 - Run it again in the same design and the new code is named `QR code 2`, `QR code 3`, and so on. A new plate with no move asked goes 5 mm to the right of what the design already holds.
 - The code is a sketch plus an extrusion, so you can edit it afterwards in the timeline. The colour is set once when the code is made: if you change the height or the sketch later, colour the new faces with the Appearance command.
 - One run is one undo step. A wrong input changes nothing.
-- A very long text is refused (about 100 characters of link): each outline of the code is one SolidCraft call, and a run may last at most 30 s.
+- A very long text is refused (about 150 characters of link): each outline of the code is one SolidCraft call, and a run may last at most 30 s.
 - Too small a size for the text (a module under 0.4 mm) is refused, and the message says the size needed.
 
 From a script or an MCP client the entry is `code-maker.code`. SolidCraft's MCP server exposes it as the tool `code-maker_code`: call that tool directly (a generic `execute` of `code-maker.code` asks for a plugin approval token first), with `kind` (`qr`, `datamatrix`, `aztec`, `pdf417`, `code128`, `code39`, `code93`, `ean13`, `ean8`, `upca`, `upce`, `itf`, `codabar`, `aruco` or `apriltag`), `qr_correction` (`low`, `medium`, `quartile` or `high`, QR code), `text` (QR code, 2D code or Code 128) or `<kind>_text` (`ean13_text`, `upca_text`, `code39_text`, ... for the strict barcodes), `bar_height` (barcode), `aruco_dictionary` or `apriltag_dictionary` and `id` (marker), `face` (a pick of a body's face by `index`, `name` or a `point` on it), `style` (`raised`, `engraved` or `inlay`), `own_body` (`true` makes a raised code a body of its own; an inlay always is),
