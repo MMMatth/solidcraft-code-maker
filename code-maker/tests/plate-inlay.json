@@ -1,0 +1,5 @@
+{
+ "entry": "code",
+ "params": {"text": "HELLO", "size": 25, "style": "inlay", "height": 0.8, "color": "green"},
+ "expect": {"reply": {"result": {"style": "inlay", "own_body": true, "coloured_faces": 308}}, "model": {"body_count": 2}, "tolerance": 0.001}
+}

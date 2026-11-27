@@ -1,0 +1,5 @@
+{
+ "entry": "code",
+ "params": {"text": "HELLO", "size": 25, "own_body": true, "color": "orange"},
+ "expect": {"reply": {"result": {"style": "raised", "own_body": true, "coloured_faces": 308}}, "model": {"body_count": 2}, "tolerance": 0.001}
+}

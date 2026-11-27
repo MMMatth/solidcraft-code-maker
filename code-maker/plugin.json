@@ -336,8 +336,19 @@
                 {
                   "const": "engraved",
                   "title": "Engraved"
+                },
+                {
+                  "const": "inlay",
+                  "title": "Inlay (engraved, filled by a body of its own)"
                 }
-              ]
+              ],
+              "description": "Raised from the surface, engraved into it, or inlay: engraved and filled flush by a separate body, so a slicer can print it in another filament."
+            },
+            "own_body": {
+              "type": "boolean",
+              "title": "Code as its own body",
+              "default": false,
+              "description": "Makes the raised code a body of its own instead of part of the plate or face, so a slicer can give it another filament. An inlay is always its own body."
             },
             "color": {
               "type": "string",

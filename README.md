@@ -34,7 +34,8 @@ photographed with `solidcraft-cli snapshot`.
 | Text or link, or the number of a barcode | `https://example.com` | What the code says (at most 500 characters), in the field of its type; not used for a marker |
 | Marker number | 0 | ArUco or AprilTag only: the marker's number in its dictionary |
 | Put it on a face | none | A flat face of your model; empty gives a new plate |
-| Style | Raised | Raised from the surface, or engraved into it |
+| Style | Raised | Raised from the surface, engraved into it, or inlay: engraved and filled flush by a body of its own |
+| Code as its own body | Off | Makes a raised code a body of its own, not part of the plate or face, so a slicer can print it in another filament. An inlay always is |
 | Colour of the code | Black | Colour of the raised modules or of the engraving; No colour keeps the colour of the part |
 | Size | 30 mm for a QR code, more for a barcode | Width of the code (the whole barcode, for a barcode). The form starts at a size that suits the type (65 mm for an EAN-13, 80 mm for a Code 128, ...). Smaller than the code can print (modules under 0.4 mm) and it is raised to the least that works; the result says so |
 | Bar height | 15 mm | Barcodes only: how tall the bars are |
@@ -86,14 +87,14 @@ Good to know:
 
 - The code is centred on the picked face and stays upright. A code larger than the face overhangs it.
 - Only flat faces work, such as the top of a cylinder. A curved face (the side of a cylinder) is refused with "the face is not flat".
-- A new plate is 2 mm thick with a small blank border. The whole result is one body.
+- A new plate is 2 mm thick with a small blank border. The whole result is one body, unless the code is its own body (an inlay, or **Code as its own body**): then the plate and the code are two bodies, the code named `QR code` and coloured as asked, and the plate keeps its own colour.
 - Run it again in the same design and the new code is named `QR code 2`, `QR code 3`, and so on. A new plate with no move asked goes 5 mm to the right of what the design already holds.
 - The code is a sketch plus an extrusion, so you can edit it afterwards in the timeline. The colour is set once when the code is made: if you change the height or the sketch later, colour the new faces with the Appearance command.
 - One run is one undo step. A wrong input changes nothing.
 - A very long text is refused (about 100 characters of link): each outline of the code is one SolidCraft call, and a run may last at most 30 s.
 - Too small a size for the text (a module under 0.4 mm) is refused, and the message says the size needed.
 
-From a script or an MCP client the entry is `code-maker.code`. SolidCraft's MCP server exposes it as the tool `code-maker_code`: call that tool directly (a generic `execute` of `code-maker.code` asks for a plugin approval token first), with `kind` (`qr`, `datamatrix`, `aztec`, `pdf417`, `code128`, `code39`, `code93`, `ean13`, `ean8`, `upca`, `upce`, `itf`, `codabar`, `aruco` or `apriltag`), `qr_correction` (`low`, `medium`, `quartile` or `high`, QR code), `text` (QR code, 2D code or Code 128) or `<kind>_text` (`ean13_text`, `upca_text`, `code39_text`, ... for the strict barcodes), `bar_height` (barcode), `aruco_dictionary` or `apriltag_dictionary` and `id` (marker), `face` (a pick of a body's face by `index`, `name` or a `point` on it), `style` (`raised` or `engraved`),
+From a script or an MCP client the entry is `code-maker.code`. SolidCraft's MCP server exposes it as the tool `code-maker_code`: call that tool directly (a generic `execute` of `code-maker.code` asks for a plugin approval token first), with `kind` (`qr`, `datamatrix`, `aztec`, `pdf417`, `code128`, `code39`, `code93`, `ean13`, `ean8`, `upca`, `upce`, `itf`, `codabar`, `aruco` or `apriltag`), `qr_correction` (`low`, `medium`, `quartile` or `high`, QR code), `text` (QR code, 2D code or Code 128) or `<kind>_text` (`ean13_text`, `upca_text`, `code39_text`, ... for the strict barcodes), `bar_height` (barcode), `aruco_dictionary` or `apriltag_dictionary` and `id` (marker), `face` (a pick of a body's face by `index`, `name` or a `point` on it), `style` (`raised`, `engraved` or `inlay`), `own_body` (`true` makes a raised code a body of its own; an inlay always is),
 `color` (`black`, `blue`, `red`, `green`, `orange`, `yellow`, `white` or `none`), `size`, `height`, `move_x`,
 `move_y`, `move_z`, `move_axes` (`world` or `face`) and `rotation`.
 
