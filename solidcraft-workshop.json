@@ -33,11 +33,15 @@
       "role": "image"
     },
     {
-      "path": "docs/inlay.webp",
+      "path": "docs/styles.webp",
       "role": "image"
     },
     {
-      "path": "docs/face-inlay.webp",
+      "path": "docs/part-inlay.webp",
+      "role": "image"
+    },
+    {
+      "path": "docs/kinds.webp",
       "role": "image"
     },
     {
